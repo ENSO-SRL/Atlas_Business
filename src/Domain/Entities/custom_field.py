@@ -1,17 +1,9 @@
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, date
-from enum import Enum
 from uuid import UUID
 
-class DataType(Enum):
-    SHORT_TEXT = "SHORT_TEXT"
-    LONG_TEXT = "LONG_TEXT"
-    NUMBER = "NUMBER"
-    SINGLE_CHOICE = "SINGLE_CHOICE"
-    MULTI_CHOICE = "MULTI_CHOICE"
-    YES_NO = "YES_NO"
-    DATE = "DATE"
+from src.Domain.Enums.data_type import DataType
 
 @dataclass
 class CustomField:
@@ -60,51 +52,63 @@ class CustomField:
             if self.minimum is not None or self.maximum is not None:
                 raise ValueError(f"minimum y maximum deben ser None para el tipo de dato {self.data_type.value}.")
 
-    def validate_value(self, value: str | int | float | bool | date | list[str]) -> bool:
+    def validate_response(self, value: str | int | float | bool | date | list[str] | None) -> tuple[bool, str]:
         """
         Valida si un valor proporcionado cumple con el tipo de dato y las restricciones de este campo.
-        Retorna True si es válido, False en caso contrario.
+        Retorna (True, "") si es válido, (False, mensaje) en caso contrario.
         """
         if value is None:
-            return not self.required
+            if self.required:
+                return False, f"El campo '{self.label}' es requerido."
+            return True, ""
 
         if self.data_type == DataType.SHORT_TEXT:
-            return isinstance(value, str) and len(value) <= 255
+            if not isinstance(value, str):
+                return False, f"El valor para '{self.label}' debe ser texto."
+            if len(value) > 255:
+                return False, f"El valor para '{self.label}' no puede exceder 255 caracteres."
+            return True, ""
             
         if self.data_type == DataType.LONG_TEXT:
-            return isinstance(value, str)
+            if not isinstance(value, str):
+                return False, f"El valor para '{self.label}' debe ser texto."
+            return True, ""
             
         if self.data_type == DataType.NUMBER:
             if not isinstance(value, (int, float)) or isinstance(value, bool):
-                return False
+                return False, f"El valor para '{self.label}' debe ser numérico."
             if self.minimum is not None and value < self.minimum:
-                return False
+                return False, f"El valor para '{self.label}' debe ser al menos {self.minimum}."
             if self.maximum is not None and value > self.maximum:
-                return False
-            return True
+                return False, f"El valor para '{self.label}' debe ser como máximo {self.maximum}."
+            return True, ""
             
         if self.data_type == DataType.SINGLE_CHOICE:
-            return isinstance(value, str) and self.options is not None and value in self.options
+            if not isinstance(value, str) or self.options is None or value not in self.options:
+                return False, f"El valor '{value}' no es una opción válida para '{self.label}'."
+            return True, ""
             
         if self.data_type == DataType.MULTI_CHOICE:
             if not isinstance(value, list) or not all(isinstance(i, str) for i in value):
-                return False
-            if self.options is None:
-                return False
-            return all(v in self.options for v in value)
+                return False, f"El valor para '{self.label}' debe ser una lista de textos."
+            if self.options is None or not all(v in self.options for v in value):
+                return False, f"Uno o más valores no son opciones válidas para '{self.label}'."
+            return True, ""
             
         if self.data_type == DataType.YES_NO:
-            return isinstance(value, bool)
+            if not isinstance(value, bool):
+                return False, f"El valor para '{self.label}' debe ser booleano (sí/no)."
+            return True, ""
             
         if self.data_type == DataType.DATE:
             if isinstance(value, date):
-                return True
+                return True, ""
             if isinstance(value, str):
                 try:
                     date.fromisoformat(value)
-                    return True
+                    return True, ""
                 except ValueError:
-                    return False
-            return False
+                    return False, f"El valor para '{self.label}' debe ser una fecha válida en formato YYYY-MM-DD."
+            return False, f"El valor para '{self.label}' debe ser una fecha válida."
             
-        return False
+        return False, f"Tipo de dato desconocido para el campo '{self.label}'."
