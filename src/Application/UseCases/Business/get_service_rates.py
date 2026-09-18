@@ -6,6 +6,7 @@ from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRate
 
 @dataclass
 class GetServiceRatesCommand:
+    business_id: UUID
     service_id: UUID
 
 
@@ -29,7 +30,6 @@ class GetServiceRatesUseCase:
 
     async def execute(self, command: GetServiceRatesCommand) -> list[ServiceRateResult]:
         rates = await self.rate_repo.list_by_service(command.service_id)
-
         return [
             ServiceRateResult(
                 id=r.id,

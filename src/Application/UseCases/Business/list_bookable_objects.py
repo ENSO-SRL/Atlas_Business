@@ -6,6 +6,7 @@ from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookable
 
 @dataclass
 class ListBookableObjectsCommand:
+    business_id: UUID
     service_id: UUID
 
 

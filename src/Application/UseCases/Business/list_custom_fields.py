@@ -6,6 +6,7 @@ from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomField
 
 @dataclass
 class ListCustomFieldsCommand:
+    business_id: UUID
     service_id: UUID
 
 
