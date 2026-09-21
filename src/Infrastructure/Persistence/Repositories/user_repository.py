@@ -57,6 +57,24 @@ class UserRepository(BaseRepository, IUserRepository):
         await self.session.flush()
         return entity
 
+    async def update(self, entity: User) -> None:
+        from sqlalchemy import update as sa_update
+        stmt = (
+            sa_update(UserModel)
+            .where(UserModel.id == entity.id)
+            .values(
+                first_name=entity.first_name,
+                last_name=entity.last_name,
+                email=entity.email,
+                phone=entity.phone,
+                hashed_password=entity.hashed_password,
+                is_active=entity.is_active,
+                is_email_verified=entity.is_email_verified,
+            )
+        )
+        await self.session.execute(stmt)
+        await self.session.flush()
+
     async def exists_by_email(self, email: str) -> bool:
         stmt = select(UserModel.id).where(UserModel.email == email)
         result = await self.session.execute(stmt)

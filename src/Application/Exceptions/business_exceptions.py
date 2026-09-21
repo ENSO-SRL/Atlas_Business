@@ -53,3 +53,13 @@ class RatesCoverageIncompleteError(ApplicationError):
         super().__init__(
             f"El horario del {weekday} entre {gap_start} y {gap_end} no está cubierto por ninguna tarifa."
         )
+
+
+class EmailAlreadyVerifiedError(ApplicationError):
+    def __init__(self):
+        super().__init__("El email ya ha sido verificado.")
+
+
+class InvalidEmailTokenError(ApplicationError):
+    def __init__(self):
+        super().__init__("El token es inválido, ya fue usado o ha expirado.")

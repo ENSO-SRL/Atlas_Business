@@ -18,5 +18,9 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
+    async def update(self, entity: User) -> None:
+        ...
+
+    @abstractmethod
     async def exists_by_email(self, email: str) -> bool:
         ...

@@ -10,6 +10,7 @@ from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBoo
 from src.Domain.Ports.Repositories.i_client_service_repository import IClientServiceRepository
 from src.Domain.Ports.Repositories.i_content_request_repository import IContentRequestRepository
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
+from src.Domain.Ports.Repositories.i_email_token_repository import IEmailTokenRepository
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Repositories.i_token_blacklist_repository import ITokenBlacklistRepository
@@ -23,6 +24,7 @@ from src.Infrastructure.Persistence.Repositories.client_booking_repository impor
 from src.Infrastructure.Persistence.Repositories.client_service_repository import ClientServiceRepository
 from src.Infrastructure.Persistence.Repositories.content_request_repository import ContentRequestRepository
 from src.Infrastructure.Persistence.Repositories.custom_field_repository import CustomFieldRepository
+from src.Infrastructure.Persistence.Repositories.email_token_repository import EmailTokenRepository
 from src.Infrastructure.Persistence.Repositories.service_rate_repository import ServiceRateRepository
 from src.Infrastructure.Persistence.Repositories.service_repository import ServiceRepository
 from src.Infrastructure.Persistence.Repositories.token_blacklist_repository import TokenBlacklistRepository
@@ -64,6 +66,10 @@ def get_content_request_repo(session: AsyncSession = Depends(get_session)) -> IC
 
 def get_custom_field_repo(session: AsyncSession = Depends(get_session)) -> ICustomFieldRepository:
     return CustomFieldRepository(session)
+
+
+def get_email_token_repo(session: AsyncSession = Depends(get_session)) -> IEmailTokenRepository:
+    return EmailTokenRepository(session)
 
 
 def get_service_rate_repo(session: AsyncSession = Depends(get_session)) -> IServiceRateRepository:

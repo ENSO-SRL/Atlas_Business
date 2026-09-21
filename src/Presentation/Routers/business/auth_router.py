@@ -8,15 +8,21 @@ from src.Application.UseCases.Auth.select_business import SelectBusinessCommand,
 from src.Application.UseCases.Auth.refresh_access_token import RefreshAccessTokenCommand, RefreshAccessTokenUseCase
 from src.Application.UseCases.Auth.logout_user import LogoutUserCommand, LogoutUserUseCase
 from src.Application.UseCases.Auth.get_user_profile import GetUserProfileQuery, GetUserProfileUseCase
+from src.Application.UseCases.Auth.request_email_confirmation import RequestEmailConfirmationCommand, RequestEmailConfirmationUseCase
+from src.Application.UseCases.Auth.confirm_email import ConfirmEmailCommand, ConfirmEmailUseCase
+from src.Application.UseCases.Auth.request_password_reset import RequestPasswordResetCommand, RequestPasswordResetUseCase
+from src.Application.UseCases.Auth.reset_password import ResetPasswordCommand, ResetPasswordUseCase
 
 from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Repositories.i_token_blacklist_repository import ITokenBlacklistRepository
+from src.Domain.Ports.Repositories.i_email_token_repository import IEmailTokenRepository
 from src.Domain.Ports.Services.i_password_hashing_service import IPasswordHashingService
 from src.Domain.Ports.Services.i_token_service import ITokenService
+from src.Domain.Ports.Services.i_email_service import IEmailService
 
-from src.Presentation.Dependencies.repositories import get_user_repo, get_business_user_repo, get_token_blacklist_repo
-from src.Presentation.Dependencies.services import get_password_hashing_service, get_token_service
+from src.Presentation.Dependencies.repositories import get_user_repo, get_business_user_repo, get_token_blacklist_repo, get_email_token_repo
+from src.Presentation.Dependencies.services import get_password_hashing_service, get_token_service, get_email_service
 from src.Presentation.Dependencies.auth import get_current_user, UserContext, get_refresh_token_from_cookie
 
 router = APIRouter()
@@ -37,6 +43,19 @@ class LoginRequest(BaseModel):
 
 class SelectBusinessRequest(BaseModel):
     business_id: UUID
+
+
+class ConfirmEmailRequest(BaseModel):
+    token: UUID
+
+
+class RequestPasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: UUID
+    new_password: str
 
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str | None = None):
@@ -187,3 +206,54 @@ async def logout(
 
     _clear_auth_cookies(response)
     return {"message": "Cierre de sesión exitoso."}
+
+
+@router.post("/request-email-confirmation")
+async def request_email_confirmation(
+    user_context: UserContext = Depends(get_current_user),
+    user_repo: IUserRepository = Depends(get_user_repo),
+    email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
+    email_service: IEmailService = Depends(get_email_service),
+):
+    use_case = RequestEmailConfirmationUseCase(user_repo, email_token_repo, email_service)
+    command = RequestEmailConfirmationCommand(user_id=user_context.user_id)
+    await use_case.execute(command)
+    return {"message": "Enlace de confirmación enviado exitosamente."}
+
+
+@router.post("/confirm-email")
+async def confirm_email(
+    body: ConfirmEmailRequest,
+    user_repo: IUserRepository = Depends(get_user_repo),
+    email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
+):
+    use_case = ConfirmEmailUseCase(user_repo, email_token_repo)
+    command = ConfirmEmailCommand(token=body.token)
+    await use_case.execute(command)
+    return {"message": "Correo confirmado exitosamente."}
+
+
+@router.post("/request-password-reset")
+async def request_password_reset(
+    body: RequestPasswordResetRequest,
+    user_repo: IUserRepository = Depends(get_user_repo),
+    email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
+    email_service: IEmailService = Depends(get_email_service),
+):
+    use_case = RequestPasswordResetUseCase(user_repo, email_token_repo, email_service)
+    command = RequestPasswordResetCommand(email=body.email)
+    await use_case.execute(command)
+    return {"message": "Si el correo está registrado, se ha enviado un enlace para restablecer la contraseña."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    body: ResetPasswordRequest,
+    user_repo: IUserRepository = Depends(get_user_repo),
+    email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
+    password_service: IPasswordHashingService = Depends(get_password_hashing_service),
+):
+    use_case = ResetPasswordUseCase(user_repo, email_token_repo, password_service)
+    command = ResetPasswordCommand(token=body.token, new_password=body.new_password)
+    await use_case.execute(command)
+    return {"message": "Contraseña restablecida exitosamente."}
