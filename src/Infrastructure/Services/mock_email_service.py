@@ -16,7 +16,7 @@ class MockEmailService(IEmailService):
         logger.info(f"========== MOCK EMAIL ==========")
         logger.info(f"TO: {to_email}")
         logger.info(f"SUBJECT: Confirma tu correo")
-        logger.info(f"BODY: Por favor entra a este link para confirmar tu correo: {link}")
+        print(f"BODY: Por favor entra a este link para confirmar tu correo: {link}")
         logger.info(f"================================")
 
     async def send_password_reset(self, to_email: str, token: str) -> None:

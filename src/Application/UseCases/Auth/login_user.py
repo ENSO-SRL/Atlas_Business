@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
 
-from src.Application.Exceptions.business_exceptions import UserNotFoundError
+from src.Application.Exceptions.business_exceptions import UserNotFoundError, EmailNotVerifiedError
 from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Domain.Ports.Services.i_password_hashing_service import IPasswordHashingService
 from src.Domain.Ports.Services.i_token_service import ITokenService
@@ -43,6 +43,9 @@ class LoginUserUseCase:
 
         if not self._password_service.verify(command.plain_password, user.hashed_password):
             raise InvalidCredentialsError()
+
+        if not user.is_email_verified:
+            raise EmailNotVerifiedError()
 
         # Generar tokens
         access_token = self._token_service.create_access_token(user_id=user.id)

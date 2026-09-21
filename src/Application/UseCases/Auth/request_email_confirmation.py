@@ -1,3 +1,4 @@
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -8,10 +9,11 @@ from src.Domain.Ports.Repositories.i_email_token_repository import IEmailTokenRe
 from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Domain.Ports.Services.i_email_service import IEmailService
 
+_logger = logging.getLogger(__name__)
 
 @dataclass
 class RequestEmailConfirmationCommand:
-    user_id: uuid.UUID
+    email: str
 
 
 class RequestEmailConfirmationUseCase:
@@ -26,11 +28,14 @@ class RequestEmailConfirmationUseCase:
         self._email_service = email_service
 
     async def execute(self, command: RequestEmailConfirmationCommand) -> None:
-        user = await self._user_repo.get_by_id(command.user_id)
-        if not user:
-            raise UserNotFoundError()
+        user = await self._user_repo.get_by_email(command.email)
+        if not user or not user.is_active:
+            # Termina silenciosamente por seguridad
+            _logger.info(f"Usuario no encontrado o inactivo para correo: {command.email}")
+            return
 
         if user.is_email_verified:
+            _logger.info(f"Usuario ya verificado para correo: {command.email}")
             raise EmailAlreadyVerifiedError()
 
         # Generar token de expiración de 24 horas

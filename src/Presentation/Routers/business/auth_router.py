@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 from fastapi import APIRouter, Depends, Response, Request
 from pydantic import BaseModel, EmailStr
@@ -27,6 +28,7 @@ from src.Presentation.Dependencies.auth import get_current_user, UserContext, ge
 
 router = APIRouter()
 
+_logger = logging.getLogger(__name__)
 
 class RegisterUserRequest(BaseModel):
     first_name: str
@@ -47,6 +49,10 @@ class SelectBusinessRequest(BaseModel):
 
 class ConfirmEmailRequest(BaseModel):
     token: UUID
+
+
+class RequestEmailConfirmationRequest(BaseModel):
+    email: EmailStr
 
 
 class RequestPasswordResetRequest(BaseModel):
@@ -87,6 +93,8 @@ async def register_user(
     body: RegisterUserRequest,
     user_repo: IUserRepository = Depends(get_user_repo),
     password_service: IPasswordHashingService = Depends(get_password_hashing_service),
+    email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
+    email_service: IEmailService = Depends(get_email_service),
 ):
     use_case = RegisterUserUseCase(user_repo, password_service)
     command = RegisterUserCommand(
@@ -97,6 +105,14 @@ async def register_user(
         phone=body.phone,
     )
     result = await use_case.execute(command)
+    _logger.info(f"Usuario registrado: {result.email}")
+
+    # Enviar correo de confirmación automáticamente
+    email_use_case = RequestEmailConfirmationUseCase(user_repo, email_token_repo, email_service)
+    email_command = RequestEmailConfirmationCommand(email=result.email)
+    await email_use_case.execute(email_command)
+    _logger.info(f"Correo de confirmación enviado para usuario: {result.email}")
+
     return result
 
 
@@ -210,15 +226,17 @@ async def logout(
 
 @router.post("/request-email-confirmation")
 async def request_email_confirmation(
-    user_context: UserContext = Depends(get_current_user),
+    body: RequestEmailConfirmationRequest,
     user_repo: IUserRepository = Depends(get_user_repo),
     email_token_repo: IEmailTokenRepository = Depends(get_email_token_repo),
     email_service: IEmailService = Depends(get_email_service),
 ):
+    _logger.info(f"Solicitud de confirmación de correo para usuario: {body.email}")
     use_case = RequestEmailConfirmationUseCase(user_repo, email_token_repo, email_service)
-    command = RequestEmailConfirmationCommand(user_id=user_context.user_id)
+    command = RequestEmailConfirmationCommand(email=body.email)
     await use_case.execute(command)
-    return {"message": "Enlace de confirmación enviado exitosamente."}
+    _logger.info(f"Correo de confirmación enviado para usuario: {body.email}")
+    return {"message": "Si el correo está registrado, se enviará un enlace de confirmación."}
 
 
 @router.post("/confirm-email")

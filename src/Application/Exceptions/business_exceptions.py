@@ -60,6 +60,11 @@ class EmailAlreadyVerifiedError(ApplicationError):
         super().__init__("El email ya ha sido verificado.")
 
 
+class EmailNotVerifiedError(ApplicationError):
+    def __init__(self):
+        super().__init__("Debes confirmar tu correo electrónico antes de iniciar sesión.")
+
+
 class InvalidEmailTokenError(ApplicationError):
     def __init__(self):
         super().__init__("El token es inválido, ya fue usado o ha expirado.")
