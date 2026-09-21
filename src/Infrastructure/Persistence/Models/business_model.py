@@ -35,6 +35,7 @@ class BusinessModel(Base):
     code: Mapped[str] = mapped_column(sa.String(50), nullable=False, unique=True)
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     category: Mapped[str] = mapped_column(sa.String(100), nullable=False)
+    rnc: Mapped[str] = mapped_column(sa.String(11), nullable=False, unique=True)
     platform: Mapped[str] = mapped_column(_platform_enum, nullable=False)
     verification_status: Mapped[str] = mapped_column(
         _verification_status_enum,

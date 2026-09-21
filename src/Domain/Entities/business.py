@@ -32,6 +32,7 @@ class Business:
     platform: Platform
     address: str
     phone: str
+    rnc: str
     agent_metadata_id: UUID
     verification_status: VerificationStatus = VerificationStatus.PENDING_VERIFICATION
     aliases: list[str] = field(default_factory=list)
@@ -50,6 +51,9 @@ class Business:
             
         if not self.name or not self.name.strip():
             raise ValueError("name no puede estar vacío.")
+        
+        if not self.rnc or not self.rnc.isdigit() or len(self.rnc) != 11:
+            raise ValueError("rnc debe ser exactamente 11 dígitos numéricos.")
             
         if len(self.schedules) > 7:
             raise ValueError("schedules no puede tener más de 7 entradas.")

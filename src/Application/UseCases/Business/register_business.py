@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError
+from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError
 from src.Domain.Entities.agent_metadata import AgentMetadata
 from src.Domain.Entities.business import Business
 from src.Domain.Entities.business_user import BusinessUser
@@ -11,6 +11,7 @@ from src.Domain.Enums.verification_status import VerificationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
+from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
 import uuid
 
 
@@ -32,6 +33,7 @@ class RegisterBusinessCommand:
     platform: str
     address: str
     phone: str
+    rnc: str
     maps_url: str | None
     aliases: list[str]
     schedules: list[ScheduleInput]
@@ -59,16 +61,23 @@ class RegisterBusinessUseCase:
         business_repo: IBusinessRepository,
         agent_metadata_repo: IAgentMetadataRepository,
         business_user_repo: IBusinessUserRepository,
+        rnc_service: IRncValidationService,
     ):
         self.business_repo = business_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.business_user_repo = business_user_repo
+        self.rnc_service = rnc_service
 
     async def execute(self, command: RegisterBusinessCommand) -> RegisterBusinessResult:
         # 1. Verificar unicidad de código
         existing_business = await self.business_repo.get_by_code(command.code)
         if existing_business:
             raise BusinessCodeAlreadyExistsError(command.code)
+
+        # 2. Validar RNC contra la DGII (o mock)
+        rnc_is_valid = await self.rnc_service.validate(command.rnc)
+        if not rnc_is_valid:
+            raise InvalidRncError(command.rnc)
 
         # 2. Crear AgentMetadata
         try:
@@ -100,8 +109,10 @@ class RegisterBusinessUseCase:
             code=command.code,
             name=command.name,
             category=command.category,
+            rnc=command.rnc,
             platform=Platform(command.platform),
-            verification_status=VerificationStatus.PENDING_VERIFICATION,
+            # Si el código es único y el RNC es válido, publicamos inmediatamente.
+            verification_status=VerificationStatus.VERIFIED,
             address=command.address,
             maps_url=command.maps_url,
             phone=command.phone,

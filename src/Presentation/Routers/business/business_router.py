@@ -8,8 +8,10 @@ from src.Application.UseCases.Business.update_business import UpdateBusinessComm
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
+from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
 from src.Presentation.Dependencies.auth import UserContext, get_current_user, require_admin, require_business_context
 from src.Presentation.Dependencies.repositories import get_agent_metadata_repo, get_business_repo, get_business_user_repo
+from src.Presentation.Dependencies.services import get_rnc_validation_service
 from src.Presentation.Schemas.business_schemas import RegisterBusinessRequest, UpdateBusinessRequest
 
 router = APIRouter()
@@ -27,18 +29,20 @@ async def list_my_businesses(
 @router.post("/register", status_code=201)
 async def register_business(
     body: RegisterBusinessRequest,
-    user: UserContext = Depends(get_current_user),  # Ya no es admin base en payload, sino token
+    user: UserContext = Depends(get_current_user),
     business_repo: IBusinessRepository = Depends(get_business_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+    rnc_service: IRncValidationService = Depends(get_rnc_validation_service),
 ):
-    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo)
+    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo, rnc_service)
     
     command = RegisterBusinessCommand(
         owner_user_id=user.user_id,
         code=body.code,
         name=body.name,
         category=body.category,
+        rnc=body.rnc,
         platform=body.platform,
         address=body.address,
         phone=body.phone,

@@ -18,6 +18,7 @@ class AgentMetadataIn(BaseModel):
 class RegisterBusinessRequest(BaseModel):
     code: str
     name: str
+    rnc: str
     category: str
     platform: str
     address: str

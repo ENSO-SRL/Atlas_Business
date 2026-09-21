@@ -68,3 +68,8 @@ class EmailNotVerifiedError(ApplicationError):
 class InvalidEmailTokenError(ApplicationError):
     def __init__(self):
         super().__init__("El token es inválido, ya fue usado o ha expirado.")
+
+
+class InvalidRncError(ApplicationError):
+    def __init__(self, rnc: str):
+        super().__init__(f"El RNC '{rnc}' no es válido o no está registrado en la DGII.")
