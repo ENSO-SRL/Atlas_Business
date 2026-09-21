@@ -10,11 +10,15 @@ class IBusinessUserRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_by_user(self, user_id: UUID) -> list[BusinessUser]:
+        ...
+
+    @abstractmethod
     async def get_by_id(self, id: UUID, business_id: UUID) -> BusinessUser | None:
         ...
 
     @abstractmethod
-    async def get_by_email(self, email: str, business_id: UUID) -> BusinessUser | None:
+    async def get_by_user_and_business(self, user_id: UUID, business_id: UUID) -> BusinessUser | None:
         ...
 
     @abstractmethod

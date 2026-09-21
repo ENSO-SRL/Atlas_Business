@@ -14,7 +14,7 @@ CLIENT_API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=True)
 @dataclass
 class UserContext:
     user_id: UUID
-    business_id: UUID
+    business_id: UUID | None  # Puede ser None si el JWT aún no tiene contexto de negocio
     roles: list[str]
 
 
@@ -28,19 +28,27 @@ async def get_current_user(
 ) -> UserContext:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        business_id_str = payload.get("business_id")
         return UserContext(
             user_id=UUID(payload["sub"]),
-            business_id=UUID(payload["business_id"]),
+            business_id=UUID(business_id_str) if business_id_str else None,
             roles=payload.get("roles", []),
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
 
 
-def require_admin(user: UserContext = Depends(get_current_user)) -> UserContext:
-    """Guard para endpoints solo-ADMIN."""
-    if "ADMIN" not in user.roles:
-        raise HTTPException(status_code=403, detail="Se requiere rol ADMIN.")
+def require_business_context(user: UserContext = Depends(get_current_user)) -> UserContext:
+    """Asegura que el JWT contenga un business_id válido."""
+    if not user.business_id:
+        raise HTTPException(status_code=403, detail="Se requiere haber seleccionado un negocio.")
+    return user
+
+
+def require_admin(user: UserContext = Depends(require_business_context)) -> UserContext:
+    """Guard para endpoints solo-ADMIN u OWNER."""
+    if "ADMIN" not in user.roles and "OWNER" not in user.roles:
+        raise HTTPException(status_code=403, detail="Se requiere rol ADMIN u OWNER.")
     return user
 
 

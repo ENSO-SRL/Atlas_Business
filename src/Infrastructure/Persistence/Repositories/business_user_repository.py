@@ -2,12 +2,16 @@ from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Domain.Entities.business_user import BusinessUser
+from src.Domain.Entities.user import User
 from src.Domain.Enums.system_role import SystemRole
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Infrastructure.Persistence.Models.business_user_model import BusinessUserModel
+from src.Infrastructure.Persistence.Models.user_model import UserModel
+from src.Infrastructure.Persistence.Models.business_model import BusinessModel
 from src.Infrastructure.Persistence.Repositories.base_repository import BaseRepository
 
 
@@ -18,43 +22,77 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
 
     @staticmethod
     def _to_entity(model: BusinessUserModel) -> BusinessUser:
+        user_entity = None
+        if hasattr(model, "user") and model.user:
+            user_entity = User(
+                id=model.user.id,
+                first_name=model.user.first_name,
+                last_name=model.user.last_name,
+                email=model.user.email,
+                phone=model.user.phone,
+                hashed_password=model.user.hashed_password,
+                is_active=model.user.is_active,
+                created_at=model.user.created_at,
+                updated_at=model.user.updated_at,
+            )
+            
+        business_name = None
+        business_code = None
+        if hasattr(model, "business") and model.business:
+            business_name = model.business.name
+            business_code = model.business.code
+
         return BusinessUser(
             id=model.id,
+            user_id=model.user_id,
             business_id=model.business_id,
-            first_name=model.first_name,
-            last_name=model.last_name,
-            email=model.email,
-            phone=model.phone,
-            hashed_password=model.hashed_password,
             roles=[SystemRole(r) for r in (model.roles or [])],
             is_active=model.is_active,
             created_at=model.created_at,
             created_by=model.created_by,
             updated_at=model.updated_at,
             updated_by=model.updated_by,
+            user=user_entity,
+            business_name=business_name,
+            business_code=business_code,
         )
 
     async def list_by_business(self, business_id: UUID) -> list[BusinessUser]:
         stmt = (
             select(BusinessUserModel)
+            .options(joinedload(BusinessUserModel.user))
             .where(BusinessUserModel.business_id == business_id)
-            .order_by(BusinessUserModel.first_name)
+        )
+        # Order by requiere join si es por nombre del usuario
+        stmt = stmt.join(BusinessUserModel.user).order_by(UserModel.first_name)
+        result = await self.session.execute(stmt)
+        return [self._to_entity(m) for m in result.scalars().all()]
+
+    async def list_by_user(self, user_id: UUID) -> list[BusinessUser]:
+        stmt = (
+            select(BusinessUserModel)
+            .options(joinedload(BusinessUserModel.business))
+            .where(BusinessUserModel.user_id == user_id)
         )
         result = await self.session.execute(stmt)
         return [self._to_entity(m) for m in result.scalars().all()]
 
     async def get_by_id(self, id: UUID, business_id: UUID) -> BusinessUser | None:
-        stmt = select(BusinessUserModel).where(
-            BusinessUserModel.id == id,
-            BusinessUserModel.business_id == business_id,
+        stmt = (
+            select(BusinessUserModel)
+            .options(joinedload(BusinessUserModel.user))
+            .where(
+                BusinessUserModel.id == id,
+                BusinessUserModel.business_id == business_id,
+            )
         )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_entity(model) if model else None
 
-    async def get_by_email(self, email: str, business_id: UUID) -> BusinessUser | None:
+    async def get_by_user_and_business(self, user_id: UUID, business_id: UUID) -> BusinessUser | None:
         stmt = select(BusinessUserModel).where(
-            BusinessUserModel.email == email,
+            BusinessUserModel.user_id == user_id,
             BusinessUserModel.business_id == business_id,
         )
         result = await self.session.execute(stmt)
@@ -64,12 +102,8 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
     async def create(self, entity: BusinessUser) -> BusinessUser:
         model = BusinessUserModel(
             id=entity.id,
+            user_id=entity.user_id,
             business_id=entity.business_id,
-            first_name=entity.first_name,
-            last_name=entity.last_name,
-            email=entity.email,
-            phone=entity.phone,
-            hashed_password=entity.hashed_password,
             roles=[r.value for r in entity.roles],
             is_active=entity.is_active,
             created_at=entity.created_at,

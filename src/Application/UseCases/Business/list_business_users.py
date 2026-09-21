@@ -12,6 +12,7 @@ class ListBusinessUsersCommand:
 @dataclass
 class BusinessUserResult:
     id: UUID
+    user_id: UUID
     first_name: str
     last_name: str
     email: str
@@ -22,7 +23,7 @@ class BusinessUserResult:
 
 class ListBusinessUsersUseCase:
     """
-    Lista los BusinessUser de un negocio.
+    Obtiene la lista de usuarios asociados a un negocio.
     """
 
     def __init__(self, user_repo: IBusinessUserRepository):
@@ -30,14 +31,14 @@ class ListBusinessUsersUseCase:
 
     async def execute(self, command: ListBusinessUsersCommand) -> list[BusinessUserResult]:
         users = await self.user_repo.list_by_business(command.business_id)
-
         return [
             BusinessUserResult(
                 id=u.id,
-                first_name=u.first_name,
-                last_name=u.last_name,
-                email=u.email,
-                phone=u.phone,
+                user_id=u.user_id,
+                first_name=u.user.first_name if u.user else "",
+                last_name=u.user.last_name if u.user else "",
+                email=u.user.email if u.user else "",
+                phone=u.user.phone if u.user else None,
                 roles=[r.value for r in u.roles],
                 is_active=u.is_active,
             )

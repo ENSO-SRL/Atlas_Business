@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Any
 
 # ─── Common ───
@@ -28,11 +28,6 @@ class RegisterBusinessRequest(BaseModel):
     description: str
     establishment_policies: list[str] = []
     pre_booking_requirements: list[str] = []
-    admin_first_name: str
-    admin_last_name: str
-    admin_email: str
-    admin_phone: str | None = None
-    admin_password: str
 
 class UpdateBusinessRequest(BaseModel):
     name: str | None = None
@@ -43,15 +38,16 @@ class UpdateBusinessRequest(BaseModel):
     schedules: list[ScheduleIn] | None = None
     agent_metadata: AgentMetadataIn | None = None
 
-# ─── Users ───
+# ─── Usuarios ───
 
 class CreateUserRequest(BaseModel):
-    first_name: str
-    last_name: str
-    email: str
-    phone: str | None = None
-    password: str
-    roles: list[str]
+    email: EmailStr
+    roles: list[str] = Field(..., min_items=1)
+    # Requeridos solo si el usuario no existe:
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=30)
+    password: str | None = Field(None, min_length=8)
 
 class UpdateUserRequest(BaseModel):
     roles: list[str] | None = None

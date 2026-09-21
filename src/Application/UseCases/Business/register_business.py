@@ -11,7 +11,6 @@ from src.Domain.Enums.verification_status import VerificationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
-from src.Domain.Ports.Services.i_password_hashing_service import IPasswordHashingService
 import uuid
 
 
@@ -24,6 +23,8 @@ class ScheduleInput:
 
 @dataclass
 class RegisterBusinessCommand:
+    # ID del User autenticado que crea el negocio
+    owner_user_id: UUID
     # Datos del negocio
     code: str
     name: str
@@ -38,38 +39,30 @@ class RegisterBusinessCommand:
     description: str
     establishment_policies: list[str]
     pre_booking_requirements: list[str]
-    # Datos del administrador inicial
-    admin_first_name: str
-    admin_last_name: str
-    admin_email: str
-    admin_phone: str | None
-    admin_password: str
 
 
 @dataclass
 class RegisterBusinessResult:
     business_id: UUID
     business_code: str
-    admin_user_id: UUID
 
 
 class RegisterBusinessUseCase:
     """
-    Registro inicial de un negocio junto con su usuario administrador base.
-    Ambas entidades se crean en una sola operación coordinada.
+    Registro inicial de un negocio. 
+    El usuario que lo crea (ya autenticado y existente en el sistema) 
+    se asigna automáticamente como OWNER de dicho negocio.
     """
 
     def __init__(
         self,
         business_repo: IBusinessRepository,
         agent_metadata_repo: IAgentMetadataRepository,
-        user_repo: IBusinessUserRepository,
-        password_service: IPasswordHashingService,
+        business_user_repo: IBusinessUserRepository,
     ):
         self.business_repo = business_repo
         self.agent_metadata_repo = agent_metadata_repo
-        self.user_repo = user_repo
-        self.password_service = password_service
+        self.business_user_repo = business_user_repo
 
     async def execute(self, command: RegisterBusinessCommand) -> RegisterBusinessResult:
         # 1. Verificar unicidad de código
@@ -78,7 +71,6 @@ class RegisterBusinessUseCase:
             raise BusinessCodeAlreadyExistsError(command.code)
 
         # 2. Crear AgentMetadata
-        # Python 3.12+ (uuid7)
         try:
             metadata_id = uuid.uuid7()
         except AttributeError:
@@ -119,29 +111,23 @@ class RegisterBusinessUseCase:
         )
         await self.business_repo.create(business)
 
-        # 4. Crear Admin User
+        # 4. Vincular al Owner
         try:
-            user_id = uuid.uuid7()
+            business_user_id = uuid.uuid7()
         except AttributeError:
-            user_id = uuid.uuid4()
-            
-        hashed_password = self.password_service.hash(command.admin_password)
+            business_user_id = uuid.uuid4()
 
-        admin_user = BusinessUser(
-            id=user_id,
+        owner_link = BusinessUser(
+            id=business_user_id,
+            user_id=command.owner_user_id,
             business_id=business_id,
-            first_name=command.admin_first_name,
-            last_name=command.admin_last_name,
-            email=command.admin_email,
-            phone=command.admin_phone,
-            hashed_password=hashed_password,
-            roles=[SystemRole.ADMIN],
+            roles=[SystemRole.OWNER],
             is_active=True,
+            created_by=command.owner_user_id,
         )
-        await self.user_repo.create(admin_user)
+        await self.business_user_repo.create(owner_link)
 
         return RegisterBusinessResult(
             business_id=business_id,
             business_code=command.code,
-            admin_user_id=user_id,
         )

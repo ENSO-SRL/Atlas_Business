@@ -2,30 +2,40 @@ from dataclasses import asdict
 from fastapi import APIRouter, Depends
 
 from src.Application.UseCases.Business.get_my_business import GetMyBusinessCommand, GetMyBusinessUseCase
+from src.Application.UseCases.Business.list_my_businesses import ListMyBusinessesCommand, ListMyBusinessesUseCase
 from src.Application.UseCases.Business.register_business import RegisterBusinessCommand, RegisterBusinessUseCase
 from src.Application.UseCases.Business.update_business import UpdateBusinessCommand, UpdateBusinessUseCase
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
-from src.Infrastructure.Security.argon2_password_hashing_service import Argon2PasswordHashingService
-from src.Presentation.Dependencies.auth import UserContext, get_current_user, require_admin
+from src.Presentation.Dependencies.auth import UserContext, get_current_user, require_admin, require_business_context
 from src.Presentation.Dependencies.repositories import get_agent_metadata_repo, get_business_repo, get_business_user_repo
 from src.Presentation.Schemas.business_schemas import RegisterBusinessRequest, UpdateBusinessRequest
 
 router = APIRouter()
 
+@router.get("/me/businesses")
+async def list_my_businesses(
+    user: UserContext = Depends(get_current_user),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+):
+    use_case = ListMyBusinessesUseCase(business_user_repo)
+    command = ListMyBusinessesCommand(user_id=user.user_id)
+    result = await use_case.execute(command)
+    return {"items": result}
 
 @router.post("/register", status_code=201)
 async def register_business(
     body: RegisterBusinessRequest,
+    user: UserContext = Depends(get_current_user),  # Ya no es admin base en payload, sino token
     business_repo: IBusinessRepository = Depends(get_business_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
-    user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
 ):
-    hashing_service = Argon2PasswordHashingService()
-    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, user_repo, hashing_service)
+    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo)
     
     command = RegisterBusinessCommand(
+        owner_user_id=user.user_id,
         code=body.code,
         name=body.name,
         category=body.category,
@@ -38,11 +48,6 @@ async def register_business(
         description=body.description,
         establishment_policies=body.establishment_policies,
         pre_booking_requirements=body.pre_booking_requirements,
-        admin_first_name=body.admin_first_name,
-        admin_last_name=body.admin_last_name,
-        admin_email=body.admin_email,
-        admin_phone=body.admin_phone,
-        admin_password=body.admin_password,
     )
     result = await use_case.execute(command)
     return result
@@ -50,7 +55,7 @@ async def register_business(
 
 @router.get("/me")
 async def get_my_business(
-    user: UserContext = Depends(get_current_user),
+    user: UserContext = Depends(require_business_context),
     business_repo: IBusinessRepository = Depends(get_business_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
 ):

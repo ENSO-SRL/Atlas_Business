@@ -46,10 +46,11 @@ class UpdateBusinessUserUseCase:
 
         return BusinessUserResult(
             id=user.id,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            email=user.email,
-            phone=user.phone,
+            user_id=user.user_id,
+            first_name=user.user.first_name if user.user else "",
+            last_name=user.user.last_name if user.user else "",
+            email=user.user.email if user.user else "",
+            phone=user.user.phone if user.user else None,
             roles=[r.value for r in user.roles],
             is_active=user.is_active,
         )

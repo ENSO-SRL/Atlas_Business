@@ -1,21 +1,23 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-# Excepciones de Dominio
-from src.Domain.Exceptions.domain_exceptions import (
+from src.Application.Exceptions.business_exceptions import (
     BusinessNotFoundError,
     ServiceNotFoundError,
     EmailAlreadyInUseError,
     BusinessCodeAlreadyExistsError,
     RatesCoverageIncompleteError,
-    CustomFieldValidationError,
+    ServiceNotPublishedError,
+    UserNotFoundError,
+    BookingNotFoundError,
+)
+
+from src.Application.Exceptions.client_exceptions import (
     BusinessNotVerifiedError,
     ServiceNotPublicError,
     InvalidPartySizeError,
     SlotNoLongerAvailableError,
-    ServiceNotPublishedError,
-    UserNotFoundError,
-    BookingNotFoundError,
+    CustomFieldValidationError,
 )
 
 # Excepciones de Infraestructura

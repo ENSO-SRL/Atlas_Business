@@ -5,9 +5,10 @@ from src.Application.UseCases.Business.create_business_user import CreateBusines
 from src.Application.UseCases.Business.list_business_users import ListBusinessUsersCommand, ListBusinessUsersUseCase
 from src.Application.UseCases.Business.update_business_user import UpdateBusinessUserCommand, UpdateBusinessUserUseCase
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
+from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Infrastructure.Security.argon2_password_hashing_service import Argon2PasswordHashingService
 from src.Presentation.Dependencies.auth import UserContext, require_admin
-from src.Presentation.Dependencies.repositories import get_business_user_repo
+from src.Presentation.Dependencies.repositories import get_business_user_repo, get_user_repo
 from src.Presentation.Schemas.business_schemas import CreateUserRequest, UpdateUserRequest
 
 router = APIRouter()
@@ -28,19 +29,21 @@ async def list_business_users(
 async def create_business_user(
     body: CreateUserRequest,
     user: UserContext = Depends(require_admin),
-    user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+    user_repo: IUserRepository = Depends(get_user_repo),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
 ):
     hashing_service = Argon2PasswordHashingService()
-    use_case = CreateBusinessUserUseCase(user_repo, hashing_service)
+    use_case = CreateBusinessUserUseCase(user_repo, business_user_repo, hashing_service)
     
     command = CreateBusinessUserCommand(
         business_id=user.business_id,
+        actor_id=user.user_id,
+        roles=body.roles,
+        email=body.email,
         first_name=body.first_name,
         last_name=body.last_name,
-        email=body.email,
         phone=body.phone,
         plain_password=body.password,
-        roles=body.roles,
     )
     result = await use_case.execute(command)
     return result

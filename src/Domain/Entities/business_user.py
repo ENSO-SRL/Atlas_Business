@@ -1,45 +1,36 @@
-import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from src.Domain.Entities.user import User
 from src.Domain.Enums.system_role import SystemRole
 
 @dataclass
 class BusinessUser:
     """
-    Usuario afiliado a un negocio con credenciales propias y roles de sistema.
+    Relación entre un User y un Business, junto con los roles que tiene en ese contexto.
+    No almacena datos personales (esos viven en User).
     """
     id: UUID
+    user_id: UUID
     business_id: UUID
-    first_name: str
-    last_name: str
-    email: str
-    hashed_password: str
     roles: list[SystemRole]
-    phone: str | None = None
     is_active: bool = True
     created_at: datetime | None = None
     created_by: UUID | None = None
     updated_at: datetime | None = None
     updated_by: UUID | None = None
+    
+    # Datos de navegación (opcionalmente poblados por repositorios para evitar un 2do query)
+    user: User | None = None
+    business_name: str | None = None
+    business_code: str | None = None
 
     def __post_init__(self):
-        if not self.first_name or not self.first_name.strip():
-            raise ValueError("first_name no puede estar vacío.")
-        if not self.last_name or not self.last_name.strip():
-            raise ValueError("last_name no puede estar vacío.")
-        
-        # Validación básica de email
-        if not self.email or not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
-            raise ValueError("email no tiene un formato válido.")
-            
-        if not self.hashed_password or not self.hashed_password.strip():
-            raise ValueError("hashed_password no puede estar vacío.")
-            
         if not self.roles:
-            raise ValueError("El usuario debe tener al menos un rol asignado.")
+            raise ValueError("El usuario de negocio debe tener al menos un rol asignado.")
 
     def has_role(self, role: SystemRole) -> bool:
-        """Verifica si el usuario tiene un rol específico."""
+        """Verifica si el usuario tiene un rol específico en este negocio."""
         return role in self.roles
+
