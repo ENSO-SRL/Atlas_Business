@@ -1,11 +1,26 @@
-from fastapi import APIRouter, Depends
+from uuid import UUID
+from fastapi import APIRouter, Depends, Response, Request
 from pydantic import BaseModel, EmailStr
+
 from src.Application.UseCases.Auth.register_user import RegisterUserCommand, RegisterUserUseCase
+from src.Application.UseCases.Auth.login_user import LoginUserCommand, LoginUserUseCase
+from src.Application.UseCases.Auth.select_business import SelectBusinessCommand, SelectBusinessUseCase
+from src.Application.UseCases.Auth.refresh_access_token import RefreshAccessTokenCommand, RefreshAccessTokenUseCase
+from src.Application.UseCases.Auth.logout_user import LogoutUserCommand, LogoutUserUseCase
+from src.Application.UseCases.Auth.get_user_profile import GetUserProfileQuery, GetUserProfileUseCase
+
 from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
-from src.Infrastructure.Security.argon2_password_hashing_service import Argon2PasswordHashingService
-from src.Presentation.Dependencies.repositories import get_user_repo
+from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
+from src.Domain.Ports.Repositories.i_token_blacklist_repository import ITokenBlacklistRepository
+from src.Domain.Ports.Services.i_password_hashing_service import IPasswordHashingService
+from src.Domain.Ports.Services.i_token_service import ITokenService
+
+from src.Presentation.Dependencies.repositories import get_user_repo, get_business_user_repo, get_token_blacklist_repo
+from src.Presentation.Dependencies.services import get_password_hashing_service, get_token_service
+from src.Presentation.Dependencies.auth import get_current_user, UserContext, get_refresh_token_from_cookie
 
 router = APIRouter()
+
 
 class RegisterUserRequest(BaseModel):
     first_name: str
@@ -14,12 +29,46 @@ class RegisterUserRequest(BaseModel):
     password: str
     phone: str | None = None
 
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class SelectBusinessRequest(BaseModel):
+    business_id: UUID
+
+
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str | None = None):
+    # SameSite=Lax (o None si hay frontend separado). Usamos HttpOnly siempre.
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+    )
+    if refresh_token:
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
+
+
+def _clear_auth_cookies(response: Response):
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
+
+
 @router.post("/register", status_code=201)
 async def register_user(
     body: RegisterUserRequest,
     user_repo: IUserRepository = Depends(get_user_repo),
+    password_service: IPasswordHashingService = Depends(get_password_hashing_service),
 ):
-    password_service = Argon2PasswordHashingService()
     use_case = RegisterUserUseCase(user_repo, password_service)
     command = RegisterUserCommand(
         first_name=body.first_name,
@@ -31,5 +80,110 @@ async def register_user(
     result = await use_case.execute(command)
     return result
 
-# Nota: endpoints de login, refresh, logout y select-business se implementarán 
-# cuando se reanude el plan completo de autenticación JWT.
+
+@router.post("/login")
+async def login(
+    body: LoginRequest,
+    response: Response,
+    user_repo: IUserRepository = Depends(get_user_repo),
+    password_service: IPasswordHashingService = Depends(get_password_hashing_service),
+    token_service: ITokenService = Depends(get_token_service),
+):
+    use_case = LoginUserUseCase(user_repo, password_service, token_service)
+    command = LoginUserCommand(email=body.email, plain_password=body.password)
+    result = await use_case.execute(command)
+
+    _set_auth_cookies(response, access_token=result.access_token, refresh_token=result.refresh_token)
+    return {"message": "Login exitoso."}
+
+
+@router.get("/user")
+async def get_user(
+    user_context: UserContext = Depends(get_current_user),
+    user_repo: IUserRepository = Depends(get_user_repo),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+):
+    use_case = GetUserProfileUseCase(user_repo, business_user_repo)
+    query = GetUserProfileQuery(
+        user_id=user_context.user_id,
+        business_id=user_context.business_id,
+    )
+    return await use_case.execute(query)
+
+
+@router.post("/select-business")
+async def select_business(
+    body: SelectBusinessRequest,
+    response: Response,
+    user_context: UserContext = Depends(get_current_user),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+    token_service: ITokenService = Depends(get_token_service),
+):
+    use_case = SelectBusinessUseCase(business_user_repo, token_service)
+    command = SelectBusinessCommand(
+        user_id=user_context.user_id,
+        business_id=body.business_id
+    )
+    result = await use_case.execute(command)
+
+    # Solo sobreescribe el access_token; el refresh_token se mantiene igual
+    _set_auth_cookies(response, access_token=result.access_token)
+    return {"message": "Negocio seleccionado exitosamente."}
+
+
+@router.post("/refresh")
+async def refresh_access_token(
+    response: Response,
+    # Si intentamos leer el user_context aquí, fallará si el access_token expiró.
+    # Necesitamos poder refrescar incluso si access_token no existe, leyendo solo el refresh_token
+    # pero queremos mantener el business context. Para eso leemos del payload viejo si podemos
+    # o mejor aún, no pasamos dependencias restrictivas.
+    # Un momento, RefreshAccessTokenUseCase decodificará el refresh. No podemos
+    # saber el context_business anterior desde el refresh_token (no lo guardamos ahí para no invalidarlo si cambia rol).
+    # Opcional: el cliente puede volver a llamar select_business. O podríamos extraer payload ignorando exp.
+    refresh_token: str = Depends(get_refresh_token_from_cookie),
+    token_blacklist_repo: ITokenBlacklistRepository = Depends(get_token_blacklist_repo),
+    token_service: ITokenService = Depends(get_token_service),
+    request: Request = None,
+):
+    # Intentamos obtener current_business_id del access_token viejo (ignorando expiración)
+    current_business_id = None
+    current_roles = None
+    old_access_token = request.cookies.get("access_token") if request else None
+    if old_access_token:
+        try:
+            # decodificamos ignorando firma/expiración solo para rescatar el contexto
+            import jwt
+            unverified_payload = jwt.decode(old_access_token, options={"verify_signature": False})
+            b_id_str = unverified_payload.get("business_id")
+            if b_id_str:
+                current_business_id = UUID(b_id_str)
+                current_roles = unverified_payload.get("roles")
+        except Exception:
+            pass
+
+    use_case = RefreshAccessTokenUseCase(token_blacklist_repo, token_service)
+    command = RefreshAccessTokenCommand(
+        refresh_token=refresh_token,
+        current_business_id=current_business_id,
+        current_roles=current_roles
+    )
+    result = await use_case.execute(command)
+
+    _set_auth_cookies(response, access_token=result.access_token)
+    return {"message": "Token renovado."}
+
+
+@router.post("/logout")
+async def logout(
+    response: Response,
+    refresh_token: str = Depends(get_refresh_token_from_cookie),
+    token_blacklist_repo: ITokenBlacklistRepository = Depends(get_token_blacklist_repo),
+    token_service: ITokenService = Depends(get_token_service),
+):
+    use_case = LogoutUserUseCase(token_blacklist_repo, token_service)
+    command = LogoutUserCommand(refresh_token=refresh_token)
+    await use_case.execute(command)
+
+    _clear_auth_cookies(response)
+    return {"message": "Cierre de sesión exitoso."}

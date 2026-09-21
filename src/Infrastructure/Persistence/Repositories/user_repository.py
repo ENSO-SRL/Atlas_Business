@@ -24,6 +24,7 @@ class UserRepository(BaseRepository, IUserRepository):
             phone=model.phone,
             hashed_password=model.hashed_password,
             is_active=model.is_active,
+            is_email_verified=model.is_email_verified,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -49,6 +50,7 @@ class UserRepository(BaseRepository, IUserRepository):
             phone=entity.phone,
             hashed_password=entity.hashed_password,
             is_active=entity.is_active,
+            is_email_verified=entity.is_email_verified,
             created_at=entity.created_at,
         )
         self.session.add(model)

@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Security
-from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Security, Request
+from fastapi.security import APIKeyHeader
 from jose import JWTError, jwt
 
 from src.Settings.settings import Settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/business/auth/token")
 CLIENT_API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=True)
 
 
@@ -23,9 +22,13 @@ def get_settings() -> Settings:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     settings: Settings = Depends(get_settings),
 ) -> UserContext:
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado.")
+        
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         business_id_str = payload.get("business_id")
@@ -36,6 +39,13 @@ async def get_current_user(
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+
+
+async def get_refresh_token_from_cookie(request: Request) -> str:
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Refresh token no encontrado.")
+    return token
 
 
 def require_business_context(user: UserContext = Depends(get_current_user)) -> UserContext:

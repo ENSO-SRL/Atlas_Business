@@ -15,6 +15,7 @@ class User:
     email: str
     hashed_password: str
     phone: str | None = None
+    is_email_verified: bool = False
     is_active: bool = True
     created_at: datetime | None = None
     updated_at: datetime | None = None

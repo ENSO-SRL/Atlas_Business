@@ -12,6 +12,7 @@ from src.Domain.Ports.Repositories.i_content_request_repository import IContentR
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
+from src.Domain.Ports.Repositories.i_token_blacklist_repository import ITokenBlacklistRepository
 from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Infrastructure.Persistence.Repositories.agent_metadata_repository import AgentMetadataRepository
 from src.Infrastructure.Persistence.Repositories.bookable_object_repository import BookableObjectRepository
@@ -24,6 +25,7 @@ from src.Infrastructure.Persistence.Repositories.content_request_repository impo
 from src.Infrastructure.Persistence.Repositories.custom_field_repository import CustomFieldRepository
 from src.Infrastructure.Persistence.Repositories.service_rate_repository import ServiceRateRepository
 from src.Infrastructure.Persistence.Repositories.service_repository import ServiceRepository
+from src.Infrastructure.Persistence.Repositories.token_blacklist_repository import TokenBlacklistRepository
 from src.Infrastructure.Persistence.Repositories.user_repository import UserRepository
 from src.Presentation.Dependencies.db import get_session
 
@@ -70,6 +72,10 @@ def get_service_rate_repo(session: AsyncSession = Depends(get_session)) -> IServ
 
 def get_service_repo(session: AsyncSession = Depends(get_session)) -> IServiceRepository:
     return ServiceRepository(session)
+
+
+def get_token_blacklist_repo(session: AsyncSession = Depends(get_session)) -> ITokenBlacklistRepository:
+    return TokenBlacklistRepository(session)
 
 
 def get_user_repo(session: AsyncSession = Depends(get_session)) -> IUserRepository:
