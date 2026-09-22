@@ -184,24 +184,29 @@ async def refresh_access_token(
     # Intentamos obtener current_business_id del access_token viejo (ignorando expiración)
     current_business_id = None
     current_roles = None
+    is_superadmin = False
     old_access_token = request.cookies.get("access_token") if request else None
     if old_access_token:
         try:
             # decodificamos ignorando firma/expiración solo para rescatar el contexto
-            import jwt
-            unverified_payload = jwt.decode(old_access_token, options={"verify_signature": False})
+            from jose import jwt
+            unverified_payload = jwt.get_unverified_claims(old_access_token)
+            print(unverified_payload)
             b_id_str = unverified_payload.get("business_id")
+            is_superadmin = unverified_payload.get("is_superadmin")
             if b_id_str:
-                current_business_id = UUID(b_id_str)
+                current_business_id = UUID(b_id_str) 
                 current_roles = unverified_payload.get("roles")
-        except Exception:
+        except Exception as e:
+            print(f"Error al decodificar access_token: {e}") 
             pass
 
     use_case = RefreshAccessTokenUseCase(token_blacklist_repo, token_service)
     command = RefreshAccessTokenCommand(
         refresh_token=refresh_token,
         current_business_id=current_business_id,
-        current_roles=current_roles
+        current_roles=current_roles,
+        is_superadmin=is_superadmin,
     )
     result = await use_case.execute(command)
 

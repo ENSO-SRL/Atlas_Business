@@ -43,7 +43,7 @@ class SelectBusinessUseCase:
         access_token = self._token_service.create_access_token(
             user_id=command.user_id,
             business_id=command.business_id,
-            roles=business_user.roles
+            roles=[role.value for role in business_user.roles]
         )
 
         return SelectBusinessResult(access_token=access_token)

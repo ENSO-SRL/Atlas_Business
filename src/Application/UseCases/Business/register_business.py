@@ -1,3 +1,5 @@
+from src.Domain.Enums.weekday import Weekday
+from src.Domain.Entities.business import BusinessSchedule
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -31,7 +33,7 @@ class RegisterBusinessCommand:
     # Datos del negocio
     code: str
     name: str
-    category: str
+    #category: str
     platform: str
     address: str
     phone: str
@@ -125,7 +127,11 @@ class RegisterBusinessUseCase:
             business_id = uuid.uuid4()
 
         schedules = [
-            {"weekday": s.weekday, "opening_time": s.opening_time, "closing_time": s.closing_time}
+            BusinessSchedule(
+                weekday=Weekday(s.weekday),
+                opening_time=s.opening_time,
+                closing_time=s.closing_time,
+            )
             for s in command.schedules
         ]
         

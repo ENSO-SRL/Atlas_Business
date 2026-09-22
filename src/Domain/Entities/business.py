@@ -28,7 +28,7 @@ class Business:
     id: UUID
     code: str
     name: str
-    category: str
+    #category: str
     platform: Platform
     address: str
     phone: str

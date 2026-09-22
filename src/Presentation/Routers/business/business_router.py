@@ -1,3 +1,4 @@
+from src.Application.UseCases.Business.register_business import ScheduleInput
 from dataclasses import asdict
 from fastapi import APIRouter, Depends
 
@@ -52,7 +53,14 @@ async def register_business(
         phone=body.phone,
         maps_url=body.maps_url,
         aliases=body.aliases,
-        schedules=[asdict(s) for s in body.schedules],
+        schedules=[
+            ScheduleInput(
+                weekday=s.weekday,
+                opening_time=s.opening_time,
+                closing_time=s.closing_time,
+            )
+            for s in body.schedules
+        ],
         description=body.description,
         establishment_policies=body.establishment_policies,
         pre_booking_requirements=body.pre_booking_requirements,

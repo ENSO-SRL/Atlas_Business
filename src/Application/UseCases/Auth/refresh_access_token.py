@@ -11,6 +11,7 @@ class RefreshAccessTokenCommand:
     refresh_token: str
     current_business_id: UUID | None = None
     current_roles: list[str] | None = None
+    is_superadmin: bool = False
 
 
 @dataclass
@@ -60,7 +61,8 @@ class RefreshAccessTokenUseCase:
         access_token = self._token_service.create_access_token(
             user_id=user_id,
             business_id=command.current_business_id,
-            roles=command.current_roles
+            roles=command.current_roles,
+            is_superadmin=command.is_superadmin,
         )
 
         return RefreshAccessTokenResult(access_token=access_token)

@@ -29,6 +29,7 @@ class UserProfileResult:
     phone: str | None
     is_email_verified: bool
     business_context: BusinessContextResult | None
+    is_superadmin: bool
 
 
 class GetUserProfileUseCase:
@@ -54,8 +55,8 @@ class GetUserProfileUseCase:
             if business_user:
                 business_context = BusinessContextResult(
                     business_id=business_user.business_id,
-                    business_name=business_user.business.name if business_user.business else "",
-                    roles=business_user.roles,
+                    business_name=business_user.business_name,
+                    roles=[role.value for role in business_user.roles],
                     is_active=business_user.is_active
                 )
 
@@ -66,5 +67,6 @@ class GetUserProfileUseCase:
             email=user.email,
             phone=user.phone,
             is_email_verified=user.is_email_verified,
-            business_context=business_context
+            business_context=business_context,
+            is_superadmin=user.is_superadmin,
         )

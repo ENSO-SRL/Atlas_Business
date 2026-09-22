@@ -1,7 +1,8 @@
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 import sqlalchemy as sa
-from sqlalchemy import select
+from sqlalchemy import select, inspect
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +24,9 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
     @staticmethod
     def _to_entity(model: BusinessUserModel) -> BusinessUser:
         user_entity = None
-        if hasattr(model, "user") and model.user:
+        unloaded = inspect(model).unloaded
+
+        if "user" not in unloaded and model.user:
             user_entity = User(
                 id=model.user.id,
                 first_name=model.user.first_name,
@@ -38,7 +41,7 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
             
         business_name = None
         business_code = None
-        if hasattr(model, "business") and model.business:
+        if "business" not in unloaded and model.business:
             business_name = model.business.name
             business_code = model.business.code
 
@@ -91,9 +94,17 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
         return self._to_entity(model) if model else None
 
     async def get_by_user_and_business(self, user_id: UUID, business_id: UUID) -> BusinessUser | None:
-        stmt = select(BusinessUserModel).where(
-            BusinessUserModel.user_id == user_id,
-            BusinessUserModel.business_id == business_id,
+        stmt = (
+            select(BusinessUserModel)
+            .options(
+                joinedload(BusinessUserModel.user),
+                joinedload(BusinessUserModel.business)
+            )
+            .where(
+                BusinessUserModel.user_id == user_id,
+                BusinessUserModel.business_id == business_id,
+                BusinessUserModel.is_active == True,
+            )
         )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
