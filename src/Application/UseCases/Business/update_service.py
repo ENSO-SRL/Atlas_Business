@@ -10,7 +10,9 @@ from src.Domain.Enums.publication_status import PublicationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_content_request_repository import IContentRequestRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
+from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
+from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError
 
 
 @dataclass
@@ -19,6 +21,7 @@ class UpdateServiceCommand:
     business_id: UUID
     actor_id: UUID
     name: str | None = None
+    category_id: UUID | None = None
     description: str | None = None
     establishment_policies: list[str] | None = None
     pre_booking_requirements: list[str] | None = None
@@ -47,11 +50,13 @@ class UpdateServiceUseCase:
         agent_metadata_repo: IAgentMetadataRepository,
         content_request_repo: IContentRequestRepository,
         content_filter: IContentFilterService,
+        service_category_repo: IServiceCategoryRepository,
     ):
         self.service_repo = service_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.content_request_repo = content_request_repo
         self.content_filter = content_filter
+        self.service_category_repo = service_category_repo
 
     async def execute(self, command: UpdateServiceCommand) -> UpdateServiceResult:
         service = await self.service_repo.get_by_id(command.service_id, command.business_id)
@@ -61,10 +66,17 @@ class UpdateServiceUseCase:
         if service.publication_status != PublicationStatus.PUBLISHED:
             raise ServiceNotPublishedError()
 
+        if command.category_id is not None and command.category_id != service.category_id:
+            category = await self.service_category_repo.get_by_id(command.category_id)
+            if not category or not category.is_active:
+                raise ServiceCategoryNotFoundError()
+
         # Construir payload de cambios
         payload = {}
         if command.name is not None and command.name != service.name:
             payload["name"] = command.name
+        if command.category_id is not None and command.category_id != service.category_id:
+            payload["category_id"] = str(command.category_id)
         if command.buffer_minutes is not None and command.buffer_minutes != service.buffer_minutes:
             payload["buffer_minutes"] = command.buffer_minutes
         if command.grid_interval_minutes is not None and command.grid_interval_minutes != service.grid_interval_minutes:
@@ -110,6 +122,7 @@ class UpdateServiceUseCase:
         if not matches:
             # Aplicar cambios directamente
             if "name" in payload: service.name = payload["name"]
+            if "category_id" in payload: service.category_id = UUID(payload["category_id"])
             if "buffer_minutes" in payload: service.buffer_minutes = payload["buffer_minutes"]
             if "grid_interval_minutes" in payload: service.grid_interval_minutes = payload["grid_interval_minutes"]
             if "exposes_end_time" in payload: service.exposes_end_time = payload["exposes_end_time"]

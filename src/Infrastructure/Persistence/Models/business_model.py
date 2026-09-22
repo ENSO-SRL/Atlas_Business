@@ -34,7 +34,6 @@ class BusinessModel(Base):
     id: Mapped[UUID] = mapped_column(sa.UUID(as_uuid=True), primary_key=True)
     code: Mapped[str] = mapped_column(sa.String(50), nullable=False, unique=True)
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
-    category: Mapped[str] = mapped_column(sa.String(100), nullable=False)
     rnc: Mapped[str] = mapped_column(sa.String(11), nullable=False, unique=True)
     platform: Mapped[str] = mapped_column(_platform_enum, nullable=False)
     verification_status: Mapped[str] = mapped_column(
@@ -58,6 +57,11 @@ class BusinessModel(Base):
     agent_metadata_id: Mapped[UUID] = mapped_column(
         sa.UUID(as_uuid=True),
         sa.ForeignKey("agent_metadata.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    category_id: Mapped[UUID] = mapped_column(
+        sa.UUID(as_uuid=True),
+        sa.ForeignKey("business_category.id", ondelete="RESTRICT"),
         nullable=False,
     )
 

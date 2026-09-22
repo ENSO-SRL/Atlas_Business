@@ -5,7 +5,7 @@ from uuid import UUID
 
 class ITokenService(ABC):
     @abstractmethod
-    def create_access_token(self, user_id: UUID, business_id: UUID | None = None, roles: list[str] | None = None) -> str:
+    def create_access_token(self, user_id: UUID, business_id: UUID | None = None, roles: list[str] | None = None, is_superadmin: bool = False) -> str:
         """Genera un JWT de acceso de corta duración."""
         pass
 

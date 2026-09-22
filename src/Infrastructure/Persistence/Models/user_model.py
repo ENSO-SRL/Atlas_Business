@@ -27,6 +27,7 @@ class UserModel(Base):
     hashed_password: Mapped[str] = mapped_column(sa.Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.true())
     is_email_verified: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.false())
+    is_superadmin: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.false())
     
     created_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)

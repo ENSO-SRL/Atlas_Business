@@ -15,6 +15,7 @@ class UserContext:
     user_id: UUID
     business_id: UUID | None  # Puede ser None si el JWT aún no tiene contexto de negocio
     roles: list[str]
+    is_superadmin: bool = False
 
 
 def get_settings() -> Settings:
@@ -36,6 +37,7 @@ async def get_current_user(
             user_id=UUID(payload["sub"]),
             business_id=UUID(business_id_str) if business_id_str else None,
             roles=payload.get("roles", []),
+            is_superadmin=payload.get("is_superadmin", False),
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -59,6 +61,13 @@ def require_admin(user: UserContext = Depends(require_business_context)) -> User
     """Guard para endpoints solo-ADMIN u OWNER."""
     if "ADMIN" not in user.roles and "OWNER" not in user.roles:
         raise HTTPException(status_code=403, detail="Se requiere rol ADMIN u OWNER.")
+    return user
+
+
+def require_superadmin(user: UserContext = Depends(get_current_user)) -> UserContext:
+    """Guard para endpoints de administración de plataforma."""
+    if not user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Se requiere acceso de superadministrador.")
     return user
 
 

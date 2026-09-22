@@ -25,6 +25,7 @@ from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMeta
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
 from src.Domain.Ports.Repositories.i_content_request_repository import IContentRequestRepository
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
+from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
@@ -36,6 +37,7 @@ from src.Presentation.Dependencies.repositories import (
     get_bookable_object_repo,
     get_content_request_repo,
     get_custom_field_repo,
+    get_service_category_repo,
     get_service_rate_repo,
     get_service_repo,
 )
@@ -73,18 +75,14 @@ async def create_service(
     service_repo: IServiceRepository = Depends(get_service_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     content_filter: IContentFilterService = Depends(get_content_filter_service),
+    service_category_repo: IServiceCategoryRepository = Depends(get_service_category_repo),
 ):
-    use_case = CreateServiceUseCase(service_repo, agent_metadata_repo, content_filter)
-    
-    metadata_dict = {
-        "description": body.agent_metadata.description or "",
-        "establishment_policies": body.agent_metadata.establishment_policies or [],
-        "pre_booking_requirements": body.agent_metadata.pre_booking_requirements or [],
-    }
+    use_case = CreateServiceUseCase(service_repo, agent_metadata_repo, content_filter, service_category_repo)
     
     command = CreateServiceCommand(
         business_id=user.business_id,
         name=body.name,
+        category_id=body.category_id,
         occupation_duration_minutes=body.occupation_duration_minutes,
         duration_nature=body.duration_nature,
         exposes_end_time=body.exposes_end_time,
@@ -96,7 +94,6 @@ async def create_service(
         description=body.agent_metadata.description,
         establishment_policies=body.agent_metadata.establishment_policies,
         pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
-        #agent_metadata=metadata_dict,
         actor_id=user.user_id,
     )
     result = await use_case.execute(command)
@@ -126,8 +123,9 @@ async def update_service(
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     content_req_repo: IContentRequestRepository = Depends(get_content_request_repo),
     content_filter: IContentFilterService = Depends(get_content_filter_service),
+    service_category_repo: IServiceCategoryRepository = Depends(get_service_category_repo),
 ):
-    use_case = UpdateServiceUseCase(service_repo, agent_metadata_repo, content_req_repo, content_filter)
+    use_case = UpdateServiceUseCase(service_repo, agent_metadata_repo, content_req_repo, content_filter, service_category_repo)
     
     metadata_dict = None
     if body.agent_metadata:
@@ -141,6 +139,7 @@ async def update_service(
         business_id=user.business_id,
         service_id=service_id,
         name=body.name,
+        category_id=body.category_id,
         buffer_minutes=body.buffer_minutes,
         grid_interval_minutes=body.grid_interval_minutes,
         exposes_end_time=body.exposes_end_time,

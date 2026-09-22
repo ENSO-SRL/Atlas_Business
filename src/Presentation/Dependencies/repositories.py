@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
+from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
@@ -11,6 +12,7 @@ from src.Domain.Ports.Repositories.i_client_service_repository import IClientSer
 from src.Domain.Ports.Repositories.i_content_request_repository import IContentRequestRepository
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
 from src.Domain.Ports.Repositories.i_email_token_repository import IEmailTokenRepository
+from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Repositories.i_token_blacklist_repository import ITokenBlacklistRepository
@@ -18,6 +20,7 @@ from src.Domain.Ports.Repositories.i_user_repository import IUserRepository
 from src.Infrastructure.Persistence.Repositories.agent_metadata_repository import AgentMetadataRepository
 from src.Infrastructure.Persistence.Repositories.bookable_object_repository import BookableObjectRepository
 from src.Infrastructure.Persistence.Repositories.booking_repository import BookingRepository
+from src.Infrastructure.Persistence.Repositories.business_category_repository import BusinessCategoryRepository
 from src.Infrastructure.Persistence.Repositories.business_repository import BusinessRepository
 from src.Infrastructure.Persistence.Repositories.business_user_repository import BusinessUserRepository
 from src.Infrastructure.Persistence.Repositories.client_booking_repository import ClientBookingRepository
@@ -25,6 +28,7 @@ from src.Infrastructure.Persistence.Repositories.client_service_repository impor
 from src.Infrastructure.Persistence.Repositories.content_request_repository import ContentRequestRepository
 from src.Infrastructure.Persistence.Repositories.custom_field_repository import CustomFieldRepository
 from src.Infrastructure.Persistence.Repositories.email_token_repository import EmailTokenRepository
+from src.Infrastructure.Persistence.Repositories.service_category_repository import ServiceCategoryRepository
 from src.Infrastructure.Persistence.Repositories.service_rate_repository import ServiceRateRepository
 from src.Infrastructure.Persistence.Repositories.service_repository import ServiceRepository
 from src.Infrastructure.Persistence.Repositories.token_blacklist_repository import TokenBlacklistRepository
@@ -86,3 +90,11 @@ def get_token_blacklist_repo(session: AsyncSession = Depends(get_session)) -> IT
 
 def get_user_repo(session: AsyncSession = Depends(get_session)) -> IUserRepository:
     return UserRepository(session)
+
+
+def get_business_category_repo(session: AsyncSession = Depends(get_session)) -> IBusinessCategoryRepository:
+    return BusinessCategoryRepository(session)
+
+
+def get_service_category_repo(session: AsyncSession = Depends(get_session)) -> IServiceCategoryRepository:
+    return ServiceCategoryRepository(session)

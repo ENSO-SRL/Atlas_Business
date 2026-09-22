@@ -73,3 +73,18 @@ class InvalidEmailTokenError(ApplicationError):
 class InvalidRncError(ApplicationError):
     def __init__(self, rnc: str):
         super().__init__(f"El RNC '{rnc}' no es válido o no está registrado en la DGII.")
+
+
+class BusinessCategoryNotFoundError(ApplicationError):
+    def __init__(self):
+        super().__init__("La categoría de negocio no fue encontrada o no está activa.")
+
+
+class ServiceCategoryNotFoundError(ApplicationError):
+    def __init__(self):
+        super().__init__("La categoría de servicio no fue encontrada o no está activa.")
+
+
+class CategoryNameAlreadyExistsError(ApplicationError):
+    def __init__(self, name: str):
+        super().__init__(f"Ya existe una categoría con el nombre '{name}'.")

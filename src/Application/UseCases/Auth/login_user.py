@@ -48,7 +48,10 @@ class LoginUserUseCase:
             raise EmailNotVerifiedError()
 
         # Generar tokens
-        access_token = self._token_service.create_access_token(user_id=user.id)
+        access_token = self._token_service.create_access_token(
+            user_id=user.id,
+            is_superadmin=user.is_superadmin,
+        )
         
         # JTI es un identificador único para el refresh token que permite revocarlo
         jti = uuid.uuid4()

@@ -9,8 +9,10 @@ from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.duration_nature import DurationNature
 from src.Domain.Enums.publication_status import PublicationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
+from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
+from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError
 
 
 @dataclass
@@ -18,6 +20,7 @@ class CreateServiceCommand:
     business_id: UUID
     actor_id: UUID
     name: str
+    category_id: UUID
     occupation_duration_minutes: int
     duration_nature: str
     exposes_end_time: bool
@@ -49,12 +52,19 @@ class CreateServiceUseCase:
         service_repo: IServiceRepository,
         agent_metadata_repo: IAgentMetadataRepository,
         content_filter: IContentFilterService,
+        service_category_repo: IServiceCategoryRepository,
     ):
         self.service_repo = service_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.content_filter = content_filter
+        self.service_category_repo = service_category_repo
 
     async def execute(self, command: CreateServiceCommand) -> CreateServiceResult:
+        # Validar categoría
+        category = await self.service_category_repo.get_by_id(command.category_id)
+        if not category or not category.is_active:
+            raise ServiceCategoryNotFoundError()
+
         try:
             metadata_id = uuid.uuid7()
         except AttributeError:
@@ -98,6 +108,7 @@ class CreateServiceUseCase:
             auto_selection_criteria=AutoSelectionCriteria(command.auto_selection_criteria),
             billing_nature=BillingNature(command.billing_nature),
             agent_metadata_id=metadata_id,
+            category_id=command.category_id,
             publication_status=initial_status,
             created_by=command.actor_id,
         )

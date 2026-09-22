@@ -34,6 +34,7 @@ class Service:
     auto_selection_criteria: AutoSelectionCriteria
     billing_nature: BillingNature
     agent_metadata_id: UUID
+    category_id: UUID
     publication_status: PublicationStatus = PublicationStatus.DRAFT
     rejection_reason: str | None = None
     created_at: datetime | None = None

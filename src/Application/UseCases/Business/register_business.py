@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError
+from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError, BusinessCategoryNotFoundError
 from src.Domain.Entities.agent_metadata import AgentMetadata
 from src.Domain.Entities.business import Business
 from src.Domain.Entities.business_user import BusinessUser
@@ -9,6 +9,7 @@ from src.Domain.Enums.platform import Platform
 from src.Domain.Enums.system_role import SystemRole
 from src.Domain.Enums.verification_status import VerificationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
+from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
@@ -35,6 +36,7 @@ class RegisterBusinessCommand:
     address: str
     phone: str
     rnc: str
+    category_id: uuid.UUID
     maps_url: str | None
     aliases: list[str]
     schedules: list[ScheduleInput]
@@ -65,12 +67,14 @@ class RegisterBusinessUseCase:
         business_user_repo: IBusinessUserRepository,
         rnc_service: IRncValidationService,
         content_filter: IContentFilterService,
+        business_category_repo: IBusinessCategoryRepository,
     ):
         self.business_repo = business_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.business_user_repo = business_user_repo
         self.rnc_service = rnc_service
         self.content_filter = content_filter
+        self.business_category_repo = business_category_repo
 
     async def execute(self, command: RegisterBusinessCommand) -> RegisterBusinessResult:
         # 1. Verificar unicidad de código
@@ -82,6 +86,11 @@ class RegisterBusinessUseCase:
         rnc_is_valid = await self.rnc_service.validate(command.rnc)
         if not rnc_is_valid:
             raise InvalidRncError(command.rnc)
+
+        # 3. Validar categoría de negocio
+        category = await self.business_category_repo.get_by_id(command.category_id)
+        if not category or not category.is_active:
+            raise BusinessCategoryNotFoundError()
 
         # 2. Crear AgentMetadata
         try:
@@ -124,8 +133,8 @@ class RegisterBusinessUseCase:
             id=business_id,
             code=command.code,
             name=command.name,
-            category=command.category,
             rnc=command.rnc,
+            category_id=command.category_id,
             platform=Platform(command.platform),
             verification_status=initial_status,
             address=command.address,

@@ -18,13 +18,14 @@ class JwtTokenService(ITokenService):
     def __init__(self, settings: Settings):
         self._settings = settings
 
-    def create_access_token(self, user_id: UUID, business_id: UUID | None = None, roles: list[str] | None = None) -> str:
+    def create_access_token(self, user_id: UUID, business_id: UUID | None = None, roles: list[str] | None = None, is_superadmin: bool = False) -> str:
         expires_delta = timedelta(minutes=self._settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         expire = datetime.now(timezone.utc) + expires_delta
         
         to_encode = {
             "sub": str(user_id),
             "exp": expire,
+            "is_superadmin": is_superadmin,
         }
         
         if business_id is not None:

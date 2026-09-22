@@ -8,10 +8,11 @@ from src.Application.UseCases.Business.update_business import UpdateBusinessComm
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
+from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
 from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
 from src.Presentation.Dependencies.auth import UserContext, get_current_user, require_admin, require_business_context
-from src.Presentation.Dependencies.repositories import get_agent_metadata_repo, get_business_repo, get_business_user_repo
+from src.Presentation.Dependencies.repositories import get_agent_metadata_repo, get_business_repo, get_business_user_repo, get_business_category_repo
 from src.Presentation.Dependencies.services import get_rnc_validation_service, get_content_filter_service
 from src.Presentation.Schemas.business_schemas import RegisterBusinessRequest, UpdateBusinessRequest
 
@@ -36,15 +37,16 @@ async def register_business(
     business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
     rnc_service: IRncValidationService = Depends(get_rnc_validation_service),
     content_filter: IContentFilterService = Depends(get_content_filter_service),
+    business_category_repo: IBusinessCategoryRepository = Depends(get_business_category_repo),
 ):
-    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo, rnc_service, content_filter)
+    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo, rnc_service, content_filter, business_category_repo)
     
     command = RegisterBusinessCommand(
         owner_user_id=user.user_id,
         code=body.code,
         name=body.name,
-        category=body.category,
         rnc=body.rnc,
+        category_id=body.category_id,
         platform=body.platform,
         address=body.address,
         phone=body.phone,

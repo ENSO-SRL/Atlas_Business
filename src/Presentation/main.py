@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.Infrastructure.Persistence.database import build_engine, build_session_factory
 from src.Presentation.ExceptionHandlers import register_exception_handlers
+from src.Presentation.Routers.admin import admin_router
 from src.Presentation.Routers.business import (
     auth_router,
     bookings_router,
@@ -46,6 +47,9 @@ app.add_middleware(
 
 # Handlers de excepciones
 register_exception_handlers(app)
+
+# ─── Admin API Routers ───
+app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
 
 # ─── Business API Routers ───
 app.include_router(auth_router, prefix="/api/v1/business/auth", tags=["Auth"])

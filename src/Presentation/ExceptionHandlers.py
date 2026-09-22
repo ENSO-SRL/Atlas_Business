@@ -10,6 +10,9 @@ from src.Application.Exceptions.business_exceptions import (
     ServiceNotPublishedError,
     UserNotFoundError,
     BookingNotFoundError,
+    BusinessCategoryNotFoundError,
+    ServiceCategoryNotFoundError,
+    InvalidRncError,
 )
 
 from src.Application.Exceptions.client_exceptions import (
@@ -89,3 +92,15 @@ def register_exception_handlers(app: FastAPI):
                 "detail": "El slot ya fue reservado por otro usuario (Exclusion Constraint)."
             }
         )
+
+    @app.exception_handler(BusinessCategoryNotFoundError)
+    async def business_category_not_found_handler(request: Request, exc: BusinessCategoryNotFoundError):
+        return JSONResponse(status_code=404, content={"error": "BUSINESS_CATEGORY_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(ServiceCategoryNotFoundError)
+    async def service_category_not_found_handler(request: Request, exc: ServiceCategoryNotFoundError):
+        return JSONResponse(status_code=404, content={"error": "SERVICE_CATEGORY_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(InvalidRncError)
+    async def invalid_rnc_handler(request: Request, exc: InvalidRncError):
+        return JSONResponse(status_code=422, content={"error": "INVALID_RNC", "detail": str(exc)})

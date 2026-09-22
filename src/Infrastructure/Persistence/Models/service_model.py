@@ -64,6 +64,11 @@ class ServiceModel(Base):
         sa.ForeignKey("agent_metadata.id", ondelete="RESTRICT"),
         nullable=False,
     )
+    category_id: Mapped[UUID] = mapped_column(
+        sa.UUID(as_uuid=True),
+        sa.ForeignKey("service_category.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
     publication_status: Mapped[str] = mapped_column(
         _publication_status_enum,
         nullable=False,

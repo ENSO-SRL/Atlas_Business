@@ -17,6 +17,7 @@ class User:
     phone: str | None = None
     is_email_verified: bool = False
     is_active: bool = True
+    is_superadmin: bool = False
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

@@ -33,6 +33,7 @@ class Business:
     address: str
     phone: str
     rnc: str
+    category_id: UUID
     agent_metadata_id: UUID
     verification_status: VerificationStatus = VerificationStatus.PENDING_VERIFICATION
     aliases: list[str] = field(default_factory=list)

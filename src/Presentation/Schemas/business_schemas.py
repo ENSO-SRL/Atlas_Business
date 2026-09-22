@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Any
 
@@ -19,7 +20,7 @@ class RegisterBusinessRequest(BaseModel):
     code: str
     name: str
     rnc: str
-    category: str
+    category_id: UUID
     platform: str
     address: str
     phone: str
@@ -58,6 +59,7 @@ class UpdateUserRequest(BaseModel):
 
 class CreateServiceRequest(BaseModel):
     name: str
+    category_id: UUID
     occupation_duration_minutes: int
     duration_nature: str
     exposes_end_time: bool
@@ -70,6 +72,7 @@ class CreateServiceRequest(BaseModel):
 
 class UpdateServiceRequest(BaseModel):
     name: str | None = None
+    category_id: UUID | None = None
     buffer_minutes: int | None = None
     grid_interval_minutes: int | None = None
     exposes_end_time: bool | None = None
