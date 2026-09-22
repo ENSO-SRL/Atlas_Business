@@ -55,6 +55,11 @@ class RatesCoverageIncompleteError(ApplicationError):
         )
 
 
+class RatesRequiredForBillableServiceError(ApplicationError):
+    def __init__(self):
+        super().__init__("Un servicio facturable (BILLABLE) requiere que se provean sus tarifas al momento de crearlo.")
+
+
 class EmailAlreadyVerifiedError(ApplicationError):
     def __init__(self):
         super().__init__("El email ya ha sido verificado.")

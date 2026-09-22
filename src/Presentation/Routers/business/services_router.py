@@ -14,7 +14,7 @@ from src.Application.UseCases.Business.list_bookable_objects import ListBookable
 from src.Application.UseCases.Business.update_bookable_object import UpdateBookableObjectCommand, UpdateBookableObjectUseCase
 
 from src.Application.UseCases.Business.get_service_rates import GetServiceRatesCommand, GetServiceRatesUseCase
-from src.Application.UseCases.Business.replace_service_rates import ReplaceServiceRatesCommand, ReplaceServiceRatesUseCase
+from src.Application.UseCases.Business.replace_service_rates import ReplaceServiceRatesCommand, ReplaceServiceRatesUseCase, RateInput
 
 from src.Application.UseCases.Business.create_custom_field import CreateCustomFieldCommand, CreateCustomFieldUseCase
 from src.Application.UseCases.Business.delete_custom_field import DeleteCustomFieldCommand, DeleteCustomFieldUseCase
@@ -76,8 +76,24 @@ async def create_service(
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     content_filter: IContentFilterService = Depends(get_content_filter_service),
     service_category_repo: IServiceCategoryRepository = Depends(get_service_category_repo),
+    business_repo: IBusinessRepository = Depends(get_business_repo),
+    rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
 ):
-    use_case = CreateServiceUseCase(service_repo, agent_metadata_repo, content_filter, service_category_repo)
+    use_case = CreateServiceUseCase(
+        service_repo, agent_metadata_repo, content_filter, service_category_repo, business_repo, rate_repo
+    )
+    
+    mapped_rates = None
+    if body.rates:
+        mapped_rates = [
+            RateInput(
+                weekdays=r.weekdays,
+                start_time=r.start_time,
+                end_time=r.end_time,
+                amount=r.amount,
+                calculation_basis=r.calculation_basis,
+            ) for r in body.rates
+        ]
     
     command = CreateServiceCommand(
         business_id=user.business_id,
@@ -94,6 +110,7 @@ async def create_service(
         description=body.agent_metadata.description,
         establishment_policies=body.agent_metadata.establishment_policies,
         pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
+        rates=mapped_rates,
         actor_id=user.user_id,
     )
     result = await use_case.execute(command)
@@ -220,7 +237,7 @@ async def get_service_rates(
     service_repo: IServiceRepository = Depends(get_service_repo),
     rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
 ):
-    use_case = GetServiceRatesUseCase(service_repo, rate_repo)
+    use_case = GetServiceRatesUseCase(rate_repo)
     command = GetServiceRatesCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -266,7 +283,7 @@ async def list_custom_fields(
     service_repo: IServiceRepository = Depends(get_service_repo),
     custom_field_repo: ICustomFieldRepository = Depends(get_custom_field_repo),
 ):
-    use_case = ListCustomFieldsUseCase(service_repo, custom_field_repo)
+    use_case = ListCustomFieldsUseCase(custom_field_repo)
     command = ListCustomFieldsCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -280,7 +297,7 @@ async def create_custom_field(
     service_repo: IServiceRepository = Depends(get_service_repo),
     custom_field_repo: ICustomFieldRepository = Depends(get_custom_field_repo),
 ):
-    use_case = CreateCustomFieldUseCase(service_repo, custom_field_repo)
+    use_case = CreateCustomFieldUseCase(custom_field_repo, service_repo)
     command = CreateCustomFieldCommand(
         business_id=user.business_id,
         service_id=service_id,
@@ -293,6 +310,7 @@ async def create_custom_field(
         options=body.options,
         minimum=body.minimum,
         maximum=body.maximum,
+        actor_id=user.user_id,
     )
     result = await use_case.execute(command)
     return result

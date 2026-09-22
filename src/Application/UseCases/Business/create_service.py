@@ -11,8 +11,11 @@ from src.Domain.Enums.publication_status import PublicationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
+from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
+from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
-from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError
+from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError, RatesRequiredForBillableServiceError
+from src.Application.UseCases.Business.replace_service_rates import ReplaceServiceRatesUseCase, ReplaceServiceRatesCommand, RateInput
 
 
 @dataclass
@@ -32,6 +35,7 @@ class CreateServiceCommand:
     description: str
     establishment_policies: list[str]
     pre_booking_requirements: list[str]
+    rates: list[RateInput] | None = None
 
 
 @dataclass
@@ -53,13 +57,22 @@ class CreateServiceUseCase:
         agent_metadata_repo: IAgentMetadataRepository,
         content_filter: IContentFilterService,
         service_category_repo: IServiceCategoryRepository,
+        business_repo: IBusinessRepository,
+        rate_repo: IServiceRateRepository,
     ):
         self.service_repo = service_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.content_filter = content_filter
         self.service_category_repo = service_category_repo
+        self.business_repo = business_repo
+        self.rate_repo = rate_repo
 
     async def execute(self, command: CreateServiceCommand) -> CreateServiceResult:
+        # Validar tarifas si es facturable
+        if command.billing_nature == BillingNature.BILLABLE.value:
+            if not command.rates:
+                raise RatesRequiredForBillableServiceError()
+
         # Validar categoría
         category = await self.service_category_repo.get_by_id(command.category_id)
         if not category or not category.is_active:
@@ -114,6 +127,19 @@ class CreateServiceUseCase:
         )
         
         await self.service_repo.create(service)
+
+        # Crear tarifas si corresponde
+        if command.billing_nature == BillingNature.BILLABLE.value and command.rates:
+            replace_rates_use_case = ReplaceServiceRatesUseCase(
+                self.rate_repo, self.service_repo, self.business_repo
+            )
+            replace_cmd = ReplaceServiceRatesCommand(
+                service_id=service_id,
+                business_id=command.business_id,
+                actor_id=command.actor_id,
+                rates=command.rates,
+            )
+            await replace_rates_use_case.execute(replace_cmd)
 
         return CreateServiceResult(
             id=service.id,

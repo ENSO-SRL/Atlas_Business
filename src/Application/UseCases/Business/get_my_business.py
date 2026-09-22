@@ -60,7 +60,7 @@ class GetMyBusinessUseCase:
             id=business.id,
             code=business.code,
             name=business.name,
-            category=business.category,
+            category=business.category_name,
             platform=business.platform.value,
             verification_status=business.verification_status.value,
             address=business.address,

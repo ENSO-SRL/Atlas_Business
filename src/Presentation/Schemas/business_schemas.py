@@ -69,6 +69,7 @@ class CreateServiceRequest(BaseModel):
     auto_selection_criteria: str
     billing_nature: str
     agent_metadata: AgentMetadataIn
+    rates: list[RateIn] | None = None
 
 class UpdateServiceRequest(BaseModel):
     name: str | None = None

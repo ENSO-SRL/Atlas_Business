@@ -1,7 +1,8 @@
 from uuid import UUID
 
 import sqlalchemy as sa
-from sqlalchemy import select
+from sqlalchemy import select, inspect
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Domain.Entities.business import Business, BusinessSchedule
@@ -29,12 +30,18 @@ class BusinessRepository(BaseRepository, IBusinessRepository):
             )
             for s in (model.schedules or [])
         ]
+        category_name = None
+        unloaded = inspect(model).unloaded
+        if "category" not in unloaded and model.category:
+            category_name = model.category.name
+
         return Business(
             id=model.id,
             code=model.code,
             name=model.name,
             rnc=model.rnc,
             category_id=model.category_id,
+            category_name=category_name,
             platform=Platform(model.platform),
             verification_status=VerificationStatus(model.verification_status),
             address=model.address,
@@ -61,13 +68,21 @@ class BusinessRepository(BaseRepository, IBusinessRepository):
         ]
 
     async def get_by_id(self, id: UUID) -> Business | None:
-        stmt = select(BusinessModel).where(BusinessModel.id == id)
+        stmt = (
+            select(BusinessModel)
+            .options(joinedload(BusinessModel.category))
+            .where(BusinessModel.id == id)
+        )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_entity(model) if model else None
 
     async def get_by_code(self, code: str) -> Business | None:
-        stmt = select(BusinessModel).where(BusinessModel.code == code)
+        stmt = (
+            select(BusinessModel)
+            .options(joinedload(BusinessModel.category))
+            .where(BusinessModel.code == code)
+        )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_entity(model) if model else None

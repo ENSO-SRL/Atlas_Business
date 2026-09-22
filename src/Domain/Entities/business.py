@@ -28,7 +28,6 @@ class Business:
     id: UUID
     code: str
     name: str
-    #category: str
     platform: Platform
     address: str
     phone: str
@@ -36,6 +35,7 @@ class Business:
     category_id: UUID
     agent_metadata_id: UUID
     verification_status: VerificationStatus = VerificationStatus.PENDING_VERIFICATION
+    category_name: str | None = None
     aliases: list[str] = field(default_factory=list)
     schedules: list[BusinessSchedule] = field(default_factory=list)
     maps_url: str | None = None

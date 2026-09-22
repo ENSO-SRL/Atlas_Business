@@ -72,6 +72,7 @@ class BusinessModel(Base):
     updated_by: Mapped[UUID | None] = mapped_column(sa.UUID(as_uuid=True), nullable=True)
 
     # Relaciones ORM
+    category = relationship("BusinessCategoryModel", foreign_keys=[category_id], lazy="select")
     agent_metadata = relationship("AgentMetadataModel", foreign_keys=[agent_metadata_id], lazy="select")
     services = relationship("ServiceModel", back_populates="business", lazy="select")
     users = relationship("BusinessUserModel", back_populates="business", lazy="select")

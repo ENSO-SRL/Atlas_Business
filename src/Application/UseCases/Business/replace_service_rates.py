@@ -1,3 +1,4 @@
+from src.Domain.Entities.business import Business
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, time
@@ -51,14 +52,14 @@ class ReplaceServiceRatesUseCase:
         if not service:
             raise ServiceNotFoundError()
 
-        business = await self.business_repo.get_by_id(command.business_id)
+        business:Business = await self.business_repo.get_by_id(command.business_id)
         # Convertir horarios de negocio a un diccionario dict[weekday, (opening, closing)]
         # Asume que un día solo aparece una vez en los horarios del negocio
         business_schedule = {}
         for s in business.schedules:
-            opening = datetime.strptime(s["opening_time"], "%H:%M").time()
-            closing = datetime.strptime(s["closing_time"], "%H:%M").time()
-            business_schedule[s["weekday"]] = (opening, closing)
+            opening = datetime.strptime(s.opening_time, "%H:%M").time()
+            closing = datetime.strptime(s.closing_time, "%H:%M").time()
+            business_schedule[s.weekday.value] = (opening, closing)
 
         # Validar cobertura
         self._validate_coverage(command.rates, business_schedule)

@@ -41,6 +41,7 @@ class CreateCustomFieldUseCase:
         self.service_repo = service_repo
 
     async def execute(self, command: CreateCustomFieldCommand) -> CustomFieldResult:
+        print(command)
         service = await self.service_repo.get_by_id(command.service_id, command.business_id)
         if not service:
             raise ServiceNotFoundError()
