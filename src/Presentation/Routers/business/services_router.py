@@ -39,6 +39,7 @@ from src.Presentation.Dependencies.repositories import (
     get_service_rate_repo,
     get_service_repo,
 )
+from src.Presentation.Dependencies.services import get_content_filter_service
 from src.Presentation.Schemas.business_schemas import (
     CreateBookableObjectRequest,
     CreateCustomFieldRequest,
@@ -47,20 +48,6 @@ from src.Presentation.Schemas.business_schemas import (
     UpdateBookableObjectRequest,
     UpdateServiceRequest,
 )
-
-# Mocked external service
-class DummyContentFilterService(IContentFilterService):
-    
-    async def check(self, content: str) -> bool:
-        return await self.filter_text(content)
-
-    async def filter_text(self, text: str) -> list[str]:
-        # En una app real, esto llama a una API de moderación de OpenAI/Azure
-        # Para el MVP, simplemente buscamos un par de palabras clave
-        forbidden = ["casino", "apuestas", "ilegal", "droga", "violencia"]
-        matches = [word for word in forbidden if word in text.lower()]
-        return matches
-
 
 router = APIRouter()
 
@@ -85,8 +72,8 @@ async def create_service(
     user: UserContext = Depends(require_admin),
     service_repo: IServiceRepository = Depends(get_service_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
+    content_filter: IContentFilterService = Depends(get_content_filter_service),
 ):
-    content_filter = DummyContentFilterService()
     use_case = CreateServiceUseCase(service_repo, agent_metadata_repo, content_filter)
     
     metadata_dict = {
@@ -138,8 +125,8 @@ async def update_service(
     service_repo: IServiceRepository = Depends(get_service_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     content_req_repo: IContentRequestRepository = Depends(get_content_request_repo),
+    content_filter: IContentFilterService = Depends(get_content_filter_service),
 ):
-    content_filter = DummyContentFilterService()
     use_case = UpdateServiceUseCase(service_repo, agent_metadata_repo, content_req_repo, content_filter)
     
     metadata_dict = None

@@ -9,9 +9,10 @@ from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMeta
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
+from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
 from src.Presentation.Dependencies.auth import UserContext, get_current_user, require_admin, require_business_context
 from src.Presentation.Dependencies.repositories import get_agent_metadata_repo, get_business_repo, get_business_user_repo
-from src.Presentation.Dependencies.services import get_rnc_validation_service
+from src.Presentation.Dependencies.services import get_rnc_validation_service, get_content_filter_service
 from src.Presentation.Schemas.business_schemas import RegisterBusinessRequest, UpdateBusinessRequest
 
 router = APIRouter()
@@ -34,8 +35,9 @@ async def register_business(
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
     rnc_service: IRncValidationService = Depends(get_rnc_validation_service),
+    content_filter: IContentFilterService = Depends(get_content_filter_service),
 ):
-    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo, rnc_service)
+    use_case = RegisterBusinessUseCase(business_repo, agent_metadata_repo, business_user_repo, rnc_service, content_filter)
     
     command = RegisterBusinessCommand(
         owner_user_id=user.user_id,

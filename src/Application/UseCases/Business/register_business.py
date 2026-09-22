@@ -12,6 +12,7 @@ from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMeta
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
+from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
 import uuid
 
 
@@ -47,6 +48,7 @@ class RegisterBusinessCommand:
 class RegisterBusinessResult:
     business_id: UUID
     business_code: str
+    message: str
 
 
 class RegisterBusinessUseCase:
@@ -62,11 +64,13 @@ class RegisterBusinessUseCase:
         agent_metadata_repo: IAgentMetadataRepository,
         business_user_repo: IBusinessUserRepository,
         rnc_service: IRncValidationService,
+        content_filter: IContentFilterService,
     ):
         self.business_repo = business_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.business_user_repo = business_user_repo
         self.rnc_service = rnc_service
+        self.content_filter = content_filter
 
     async def execute(self, command: RegisterBusinessCommand) -> RegisterBusinessResult:
         # 1. Verificar unicidad de código
@@ -93,7 +97,19 @@ class RegisterBusinessUseCase:
         )
         await self.agent_metadata_repo.create(metadata)
 
-        # 3. Crear Business
+        # 3. Filtrar contenido
+        matches = await self.content_filter.check({
+            "name": command.name,
+            "description": command.description,
+            "aliases": ", ".join(command.aliases),
+            "establishment_policies": "\n".join(command.establishment_policies),
+            "pre_booking_requirements": "\n".join(command.pre_booking_requirements),
+        })
+
+        initial_status = VerificationStatus.PENDING_VERIFICATION if matches else VerificationStatus.VERIFIED
+        message = "En revisión por posible contenido restringido." if matches else "Negocio publicado exitosamente."
+
+        # 4. Crear Business
         try:
             business_id = uuid.uuid7()
         except AttributeError:
@@ -111,8 +127,7 @@ class RegisterBusinessUseCase:
             category=command.category,
             rnc=command.rnc,
             platform=Platform(command.platform),
-            # Si el código es único y el RNC es válido, publicamos inmediatamente.
-            verification_status=VerificationStatus.VERIFIED,
+            verification_status=initial_status,
             address=command.address,
             maps_url=command.maps_url,
             phone=command.phone,
@@ -141,4 +156,5 @@ class RegisterBusinessUseCase:
         return RegisterBusinessResult(
             business_id=business_id,
             business_code=command.code,
+            message=message,
         )
