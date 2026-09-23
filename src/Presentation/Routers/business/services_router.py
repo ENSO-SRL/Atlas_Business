@@ -179,7 +179,7 @@ async def list_bookable_objects(
     service_repo: IServiceRepository = Depends(get_service_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
 ):
-    use_case = ListBookableObjectsUseCase(object_repo)
+    use_case = ListBookableObjectsUseCase(service_repo, object_repo)
     command = ListBookableObjectsCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -239,7 +239,7 @@ async def get_service_rates(
     service_repo: IServiceRepository = Depends(get_service_repo),
     rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
 ):
-    use_case = GetServiceRatesUseCase(rate_repo)
+    use_case = GetServiceRatesUseCase(service_repo, rate_repo)
     command = GetServiceRatesCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -254,7 +254,7 @@ async def replace_service_rates(
     service_repo: IServiceRepository = Depends(get_service_repo),
     rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
 ):
-    use_case = ReplaceServiceRatesUseCase(business_repo, service_repo, rate_repo)
+    use_case = ReplaceServiceRatesUseCase(rate_repo, service_repo, business_repo)
     
     rates_data = [
         {
@@ -271,6 +271,7 @@ async def replace_service_rates(
         business_id=user.business_id,
         service_id=service_id,
         rates=rates_data,
+        actor_id=user.user_id
     )
     result = await use_case.execute(command)
     return {"items": result}
@@ -285,7 +286,7 @@ async def list_custom_fields(
     service_repo: IServiceRepository = Depends(get_service_repo),
     custom_field_repo: ICustomFieldRepository = Depends(get_custom_field_repo),
 ):
-    use_case = ListCustomFieldsUseCase(custom_field_repo)
+    use_case = ListCustomFieldsUseCase(service_repo, custom_field_repo)
     command = ListCustomFieldsCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}

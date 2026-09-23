@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from src.Application.Exceptions.business_exceptions import ServiceNotFoundError
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
+from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 
 
 @dataclass
@@ -29,10 +31,15 @@ class ListCustomFieldsUseCase:
     Lista los campos personalizados asociados a un servicio.
     """
 
-    def __init__(self, custom_field_repo: ICustomFieldRepository):
+    def __init__(self, service_repo: IServiceRepository, custom_field_repo: ICustomFieldRepository):
+        self.service_repo = service_repo
         self.custom_field_repo = custom_field_repo
 
     async def execute(self, command: ListCustomFieldsCommand) -> list[CustomFieldResult]:
+        service = await self.service_repo.get_by_id(command.service_id, command.business_id)
+        if not service:
+            raise ServiceNotFoundError()
+            
         fields = await self.custom_field_repo.list_by_service(command.service_id)
 
         return [

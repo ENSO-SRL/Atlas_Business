@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from src.Application.Exceptions.business_exceptions import ServiceNotFoundError
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
+from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 
 
 @dataclass
@@ -25,10 +27,15 @@ class GetServiceRatesUseCase:
     Obtiene las tarifas de un servicio.
     """
 
-    def __init__(self, rate_repo: IServiceRateRepository):
+    def __init__(self, service_repo: IServiceRepository, rate_repo: IServiceRateRepository):
+        self.service_repo = service_repo
         self.rate_repo = rate_repo
 
     async def execute(self, command: GetServiceRatesCommand) -> list[ServiceRateResult]:
+        service = await self.service_repo.get_by_id(command.service_id, command.business_id)
+        if not service:
+            raise ServiceNotFoundError()
+            
         rates = await self.rate_repo.list_by_service(command.service_id)
         return [
             ServiceRateResult(
