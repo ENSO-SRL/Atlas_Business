@@ -19,6 +19,7 @@ from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRate
 @dataclass
 class CreateBookingCommand:
     service_id: UUID
+    customer_phone: str
     date: date
     start_time: str  # "HH:MM"
     party_size: int
@@ -39,6 +40,11 @@ class CreateBookingResult:
     custom_fields: dict[str, Any]
 
 
+from src.Application.UseCases.Business.get_or_create_business_customer import (
+    GetOrCreateBusinessCustomerCommand,
+    GetOrCreateBusinessCustomerUseCase,
+)
+
 class CreateBookingUseCase:
     """
     Crea una reserva, validando campos personalizados y asignando el objeto de forma manual o automática.
@@ -51,12 +57,14 @@ class CreateBookingUseCase:
         client_booking_repo: IClientBookingRepository,
         custom_field_repo: ICustomFieldRepository,
         rate_repo: IServiceRateRepository,
+        get_or_create_customer_uc: GetOrCreateBusinessCustomerUseCase,
     ):
         self.client_service_repo = client_service_repo
         self.bookable_object_repo = bookable_object_repo
         self.client_booking_repo = client_booking_repo
         self.custom_field_repo = custom_field_repo
         self.rate_repo = rate_repo
+        self.get_or_create_customer_uc = get_or_create_customer_uc
 
     async def execute(self, command: CreateBookingCommand) -> CreateBookingResult:
         if command.party_size < 1:
@@ -133,6 +141,13 @@ class CreateBookingUseCase:
             if rate_info:
                 calculated_amount = rate_info
 
+        # 3.5. Obtener o crear el cliente
+        customer_command = GetOrCreateBusinessCustomerCommand(
+            business_id=service.business_id,
+            phone=command.customer_phone
+        )
+        customer = await self.get_or_create_customer_uc.execute(customer_command)
+
         # 4. Crear reserva
         try:
             booking_id = uuid.uuid7()
@@ -141,15 +156,16 @@ class CreateBookingUseCase:
             
         booking = Booking(
             id=booking_id,
-            business_id=service.business_id,
+            #business_id=service.business_id,
             service_id=service.id,
             bookable_object_id=assigned_object.id,
+            customer_id=customer.id,
             start_time=slot_start,
             end_time=booking_end, # end_time de la reserva incluye el buffer
             party_size=command.party_size,
             calculated_amount=calculated_amount,
             custom_fields=command.custom_fields,
-            agent_notes=None,
+            #agent_notes=None,
         )
 
         # Aquí si hay una violación de Exclusión GiST (race condition), 
