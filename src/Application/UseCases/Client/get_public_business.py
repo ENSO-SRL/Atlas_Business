@@ -55,7 +55,7 @@ class GetPublicBusinessUseCase:
         return PublicBusinessResult(
             id=business.id,
             name=business.name,
-            category=business.category,
+            category=business.category_name,
             platform=business.platform.value,
             address=business.address,
             maps_url=business.maps_url,

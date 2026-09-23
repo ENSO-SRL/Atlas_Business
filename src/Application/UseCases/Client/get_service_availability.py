@@ -3,7 +3,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from uuid import UUID
 
 from src.Application.Exceptions.client_exceptions import InvalidDateError, InvalidPartySizeError, ServiceNotPublicError
-from src.Domain.Enums.billing_nature import BillingNature
+from src.Domain.Entities.service import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
@@ -94,20 +94,25 @@ class GetServiceAvailabilityUseCase:
 
         if capacity_total == 0:
             return empty_result
-
+        print(f"qualified_objects: {qualified_objects}")
         qualified_ids = [obj.id for obj in qualified_objects]
 
         # 2. Determinar horario laboral del negocio para ese día
         business = await self.business_repo.get_by_id(service.business_id)
         weekday = command.date.strftime("%A").upper()
-        schedule = next((s for s in business.schedules if s["weekday"] == weekday), None)
+        print(f"weekday: {weekday}")
+        print(f"business.schedules: {[s.weekday.value for s in business.schedules]}")
+        schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
         
         if not schedule:
+            print("No schedule found")
             return empty_result
 
         # Asumimos UTC para las consultas a BD por simplicidad si no hay timezone especificado
-        day_start = datetime.combine(command.date, time.fromisoformat(schedule["opening_time"])).replace(tzinfo=timezone.utc)
-        day_end = datetime.combine(command.date, time.fromisoformat(schedule["closing_time"])).replace(tzinfo=timezone.utc)
+        day_start = datetime.combine(command.date, time.fromisoformat(schedule.opening_time)).replace(tzinfo=timezone.utc)
+        day_end = datetime.combine(command.date, time.fromisoformat(schedule.closing_time)).replace(tzinfo=timezone.utc)
+        print(f"day_start: {day_start}")
+        print(f"day_end: {day_end}")
 
         # 3. Generar parrilla de slots candidatos
         total_duration = service.occupation_duration_minutes + service.buffer_minutes
@@ -123,7 +128,7 @@ class GetServiceAvailabilityUseCase:
 
         if not candidate_slots:
             return empty_result
-
+        print(f"candidate_slots: {candidate_slots}")
         # 4. Recuperar grupos de ocupación desde la BD (un solo query)
         occupied_groups = await self.client_booking_repo.get_occupied_groups(
             object_ids=qualified_ids,
@@ -149,8 +154,13 @@ class GetServiceAvailabilityUseCase:
 
             slot_end = slot_start + timedelta(minutes=service.occupation_duration_minutes)
             rate_info = None
-            if service.billing_nature == BillingNature.BILLABLE:
+            print(f"service.billing_nature: {service.billing_nature}")
+            equal:bool = service.billing_nature == BillingNature.BILLABLE
+            print(f"equal: {equal}")
+            if equal:
+                print(f"Finding rate for slot {slot_start} with party size {command.party_size}")
                 rate_info = self._find_rate(rates, slot_start, command.party_size)
+            print(f"rate_info: {rate_info}")
 
             result_slots.append(
                 SlotResult(

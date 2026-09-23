@@ -179,7 +179,7 @@ async def list_bookable_objects(
     service_repo: IServiceRepository = Depends(get_service_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
 ):
-    use_case = ListBookableObjectsUseCase(service_repo, object_repo)
+    use_case = ListBookableObjectsUseCase(object_repo)
     command = ListBookableObjectsCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -193,13 +193,14 @@ async def create_bookable_object(
     service_repo: IServiceRepository = Depends(get_service_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
 ):
-    use_case = CreateBookableObjectUseCase(service_repo, object_repo)
+    use_case = CreateBookableObjectUseCase(object_repo, service_repo)
     command = CreateBookableObjectCommand(
         business_id=user.business_id,
         service_id=service_id,
         name=body.name,
         min_capacity=body.min_capacity,
         max_capacity=body.max_capacity,
+        actor_id=user.user_id,
     )
     result = await use_case.execute(command)
     return result
@@ -214,7 +215,7 @@ async def update_bookable_object(
     service_repo: IServiceRepository = Depends(get_service_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
 ):
-    use_case = UpdateBookableObjectUseCase(service_repo, object_repo)
+    use_case = UpdateBookableObjectUseCase(object_repo, service_repo)
     command = UpdateBookableObjectCommand(
         business_id=user.business_id,
         service_id=service_id,
@@ -223,6 +224,7 @@ async def update_bookable_object(
         min_capacity=body.min_capacity,
         max_capacity=body.max_capacity,
         is_active=body.is_active,
+        actor_id=user.user_id,
     )
     result = await use_case.execute(command)
     return result

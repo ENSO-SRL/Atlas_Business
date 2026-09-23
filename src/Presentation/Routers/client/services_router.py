@@ -32,8 +32,11 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 async def list_public_services(
     business_id: UUID,
     service_repo: IClientServiceRepository = Depends(get_client_service_repo),
+    business_repo: IBusinessRepository = Depends(get_business_repo),
+    agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
+    custom_field_repo: ICustomFieldRepository = Depends(get_custom_field_repo),
 ):
-    use_case = ListPublicServicesUseCase(service_repo)
+    use_case = ListPublicServicesUseCase(business_repo, service_repo,agent_metadata_repo, custom_field_repo)
     command = ListPublicServicesCommand(business_id=business_id)
     result = await use_case.execute(command)
     return {"items": result}
@@ -43,11 +46,12 @@ async def list_public_services(
 async def get_public_service(
     business_id: UUID,
     service_id: UUID,
+    business_repo: IBusinessRepository = Depends(get_business_repo),
     service_repo: IClientServiceRepository = Depends(get_client_service_repo),
     agent_metadata_repo: IAgentMetadataRepository = Depends(get_agent_metadata_repo),
     custom_field_repo: ICustomFieldRepository = Depends(get_custom_field_repo),
 ):
-    use_case = GetPublicServiceUseCase(service_repo, agent_metadata_repo, custom_field_repo)
+    use_case = GetPublicServiceUseCase(business_repo, service_repo, agent_metadata_repo, custom_field_repo)
     command = GetPublicServiceCommand(business_id=business_id, service_id=service_id)
     result = await use_case.execute(command)
     return result
@@ -74,8 +78,9 @@ async def get_service_availability(
     business_repo: IBusinessRepository = Depends(get_business_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
     booking_repo: IClientBookingRepository = Depends(get_client_booking_repo),
+    rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
 ):
-    use_case = GetServiceAvailabilityUseCase(service_repo, business_repo, object_repo, booking_repo)
+    use_case = GetServiceAvailabilityUseCase(service_repo, business_repo, object_repo, booking_repo, rate_repo)
     command = GetServiceAvailabilityCommand(
         service_id=service_id,
         party_size=party_size,
