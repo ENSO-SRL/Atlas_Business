@@ -146,3 +146,17 @@ class CustomerBookingResponse(BaseModel):
 class PaginatedCustomerBookingResponse(BaseModel):
     items: list[CustomerBookingResponse]
     total: int
+
+# ─── User Businesses ───
+
+class UserBusinessResponse(BaseModel):
+    business_id: UUID
+    business_name: str | None
+    business_code: str | None
+    roles: list[str]
+    is_active: bool
+    created_at: str | None
+
+class PaginatedUserBusinessesResponse(BaseModel):
+    items: list[UserBusinessResponse]
+    total: int

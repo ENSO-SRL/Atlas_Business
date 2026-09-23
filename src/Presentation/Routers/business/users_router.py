@@ -61,6 +61,7 @@ async def update_business_user(
     command = UpdateBusinessUserCommand(
         user_id=user_id,
         business_id=user.business_id,
+        actor_id=user.user_id,
         roles=body.roles,
         is_active=body.is_active,
     )

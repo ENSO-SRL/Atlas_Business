@@ -14,6 +14,10 @@ class IBusinessUserRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_paginated_by_user(self, user_id: UUID, page: int, page_size: int) -> tuple[list[BusinessUser], int]:
+        ...
+
+    @abstractmethod
     async def get_by_id(self, id: UUID, business_id: UUID) -> BusinessUser | None:
         ...
 

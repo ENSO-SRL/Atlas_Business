@@ -9,6 +9,7 @@ from src.Domain.Ports.Repositories.i_business_customer_repository import IBusine
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
+from src.Domain.Ports.Repositories.i_client_business_repository import IClientBusinessRepository
 from src.Domain.Ports.Repositories.i_client_service_repository import IClientServiceRepository
 from src.Domain.Ports.Repositories.i_content_request_repository import IContentRequestRepository
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
@@ -26,6 +27,7 @@ from src.Infrastructure.Persistence.Repositories.business_customer_repository im
 from src.Infrastructure.Persistence.Repositories.business_repository import BusinessRepository
 from src.Infrastructure.Persistence.Repositories.business_user_repository import BusinessUserRepository
 from src.Infrastructure.Persistence.Repositories.client_booking_repository import ClientBookingRepository
+from src.Infrastructure.Persistence.Repositories.client_business_repository import ClientBusinessRepository
 from src.Infrastructure.Persistence.Repositories.client_service_repository import ClientServiceRepository
 from src.Infrastructure.Persistence.Repositories.content_request_repository import ContentRequestRepository
 from src.Infrastructure.Persistence.Repositories.custom_field_repository import CustomFieldRepository
@@ -64,6 +66,10 @@ def get_business_user_repo(session: AsyncSession = Depends(get_session)) -> IBus
 
 def get_client_booking_repo(session: AsyncSession = Depends(get_session)) -> IClientBookingRepository:
     return ClientBookingRepository(session)
+
+
+def get_client_business_repo(session: AsyncSession = Depends(get_session)) -> IClientBusinessRepository:
+    return ClientBusinessRepository(session)
 
 
 def get_client_service_repo(session: AsyncSession = Depends(get_session)) -> IClientServiceRepository:

@@ -9,6 +9,7 @@ from src.Application.UseCases.Auth.select_business import SelectBusinessCommand,
 from src.Application.UseCases.Auth.refresh_access_token import RefreshAccessTokenCommand, RefreshAccessTokenUseCase
 from src.Application.UseCases.Auth.logout_user import LogoutUserCommand, LogoutUserUseCase
 from src.Application.UseCases.Auth.get_user_profile import GetUserProfileQuery, GetUserProfileUseCase
+from src.Application.UseCases.Auth.list_user_businesses import ListUserBusinessesCommand, ListUserBusinessesUseCase
 from src.Application.UseCases.Auth.request_email_confirmation import RequestEmailConfirmationCommand, RequestEmailConfirmationUseCase
 from src.Application.UseCases.Auth.confirm_email import ConfirmEmailCommand, ConfirmEmailUseCase
 from src.Application.UseCases.Auth.request_password_reset import RequestPasswordResetCommand, RequestPasswordResetUseCase
@@ -25,6 +26,7 @@ from src.Domain.Ports.Services.i_email_service import IEmailService
 from src.Presentation.Dependencies.repositories import get_user_repo, get_business_user_repo, get_token_blacklist_repo, get_email_token_repo
 from src.Presentation.Dependencies.services import get_password_hashing_service, get_token_service, get_email_service
 from src.Presentation.Dependencies.auth import get_current_user, UserContext, get_refresh_token_from_cookie
+from src.Presentation.Schemas.business_schemas import PaginatedUserBusinessesResponse
 
 router = APIRouter()
 
@@ -144,6 +146,23 @@ async def get_user(
         business_id=user_context.business_id,
     )
     return await use_case.execute(query)
+
+
+@router.get("/me/businesses", response_model=PaginatedUserBusinessesResponse)
+async def list_user_businesses(
+    page: int = 1,
+    page_size: int = 20,
+    user_context: UserContext = Depends(get_current_user),
+    business_user_repo: IBusinessUserRepository = Depends(get_business_user_repo),
+):
+    use_case = ListUserBusinessesUseCase(business_user_repo)
+    command = ListUserBusinessesCommand(
+        user_id=user_context.user_id,
+        page=page,
+        page_size=page_size
+    )
+    items, total = await use_case.execute(command)
+    return {"items": items, "total": total}
 
 
 @router.post("/select-business")

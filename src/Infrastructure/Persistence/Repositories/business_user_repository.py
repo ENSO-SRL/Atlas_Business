@@ -2,7 +2,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 import sqlalchemy as sa
-from sqlalchemy import select, inspect
+from sqlalchemy import select, inspect, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -79,6 +79,23 @@ class BusinessUserRepository(BaseRepository, IBusinessUserRepository):
         )
         result = await self.session.execute(stmt)
         return [self._to_entity(m) for m in result.scalars().all()]
+
+    async def list_paginated_by_user(self, user_id: UUID, page: int, page_size: int) -> tuple[list[BusinessUser], int]:
+        base_stmt = select(BusinessUserModel).where(BusinessUserModel.user_id == user_id)
+
+        count_stmt = select(func.count()).select_from(base_stmt.subquery())
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar_one_or_none() or 0
+
+        stmt = (
+            base_stmt
+            .options(joinedload(BusinessUserModel.business))
+            .order_by(BusinessUserModel.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self.session.execute(stmt)
+        return [self._to_entity(m) for m in result.scalars().all()], total
 
     async def get_by_id(self, id: UUID, business_id: UUID) -> BusinessUser | None:
         stmt = (

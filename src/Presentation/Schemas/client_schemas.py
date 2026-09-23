@@ -12,3 +12,16 @@ class CreateBookingRequest(BaseModel):
     party_size: int
     bookable_object_id: UUID | None = None
     custom_fields: dict[str, Any] = {}
+
+# ─── Public Businesses ───
+
+class PublicBusinessDirectoryResponse(BaseModel):
+    id: UUID
+    category_id: UUID
+    code: str
+    name: str
+    address: str
+
+class PaginatedPublicBusinessDirectoryResponse(BaseModel):
+    items: list[PublicBusinessDirectoryResponse]
+    total: int
