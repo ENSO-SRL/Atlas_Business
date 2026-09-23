@@ -10,5 +10,6 @@ class Settings(BaseSettings):
     
     CLIENT_API_KEY: str
     FRONTEND_URL: str = "http://localhost:3000"
+    CONTENT_FILTER_THRESHOLD: int = 85
 
     model_config = SettingsConfigDict(env_file="src/.env")

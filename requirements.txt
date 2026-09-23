@@ -8,3 +8,5 @@ python-jose[cryptography]>=3.3.0
 pydantic[email]>=2.7.0
 pydantic-settings>=2.3.0
 python-dotenv>=1.0.0
+thefuzz>=0.22.1
+python-Levenshtein>=0.25.1

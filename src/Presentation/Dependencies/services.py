@@ -8,9 +8,9 @@ from src.Domain.Ports.Services.i_content_filter_service import IContentFilterSer
 from src.Domain.Ports.Services.i_external_agent_identity_service import IExternalAgentIdentityService
 from src.Infrastructure.Security.argon2_password_hashing_service import Argon2PasswordHashingService
 from src.Infrastructure.Security.jwt_token_service import JwtTokenService
+from src.Infrastructure.Services.fuzzy_content_filter_service import FuzzyContentFilterService
 from src.Infrastructure.Services.mock_email_service import MockEmailService
 from src.Infrastructure.Services.mock_rnc_validation_service import MockRncValidationService
-from src.Infrastructure.Services.dummy_content_filter_service import DummyContentFilterService
 from src.Infrastructure.Services.dummy_external_agent_identity_service import DummyExternalAgentIdentityService
 from src.Presentation.Dependencies.auth import get_settings
 from src.Settings.settings import Settings
@@ -32,8 +32,8 @@ def get_rnc_validation_service() -> IRncValidationService:
     return MockRncValidationService()
 
 
-def get_content_filter_service() -> IContentFilterService:
-    return DummyContentFilterService()
+def get_content_filter_service(settings: Settings = Depends(get_settings)) -> IContentFilterService:
+    return FuzzyContentFilterService(settings)
 
 
 def get_identity_service() -> IExternalAgentIdentityService:
