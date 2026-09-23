@@ -23,3 +23,13 @@ class IBookingRepository(ABC):
     @abstractmethod
     async def get_by_id(self, id: UUID, business_id: UUID) -> Booking | None:
         ...
+
+    @abstractmethod
+    async def list_by_customer(
+        self,
+        customer_id: UUID,
+        business_id: UUID,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Booking], int]:
+        ...

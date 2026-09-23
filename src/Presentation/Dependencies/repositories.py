@@ -5,6 +5,7 @@ from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMeta
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
 from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
+from src.Domain.Ports.Repositories.i_business_customer_repository import IBusinessCustomerRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
@@ -21,6 +22,7 @@ from src.Infrastructure.Persistence.Repositories.agent_metadata_repository impor
 from src.Infrastructure.Persistence.Repositories.bookable_object_repository import BookableObjectRepository
 from src.Infrastructure.Persistence.Repositories.booking_repository import BookingRepository
 from src.Infrastructure.Persistence.Repositories.business_category_repository import BusinessCategoryRepository
+from src.Infrastructure.Persistence.Repositories.business_customer_repository import BusinessCustomerRepository
 from src.Infrastructure.Persistence.Repositories.business_repository import BusinessRepository
 from src.Infrastructure.Persistence.Repositories.business_user_repository import BusinessUserRepository
 from src.Infrastructure.Persistence.Repositories.client_booking_repository import ClientBookingRepository
@@ -50,6 +52,10 @@ def get_booking_repo(session: AsyncSession = Depends(get_session)) -> IBookingRe
 
 def get_business_repo(session: AsyncSession = Depends(get_session)) -> IBusinessRepository:
     return BusinessRepository(session)
+
+
+def get_business_customer_repo(session: AsyncSession = Depends(get_session)) -> IBusinessCustomerRepository:
+    return BusinessCustomerRepository(session)
 
 
 def get_business_user_repo(session: AsyncSession = Depends(get_session)) -> IBusinessUserRepository:

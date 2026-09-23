@@ -14,6 +14,12 @@ class IBusinessCustomerRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_paginated_by_business(
+        self, business_id: UUID, page: int, page_size: int
+    ) -> tuple[list[BusinessCustomer], int]:
+        ...
+
+    @abstractmethod
     async def create(self, entity: BusinessCustomer) -> BusinessCustomer:
         ...
 

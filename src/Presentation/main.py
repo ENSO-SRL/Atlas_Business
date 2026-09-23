@@ -9,6 +9,7 @@ from src.Presentation.Routers.admin import admin_router
 from src.Presentation.Routers.business import (
     auth_router,
     bookings_router,
+    business_customers_router,
     business_router,
     services_router,
     users_router,
@@ -55,6 +56,7 @@ app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
 app.include_router(auth_router, prefix="/api/v1/business/auth", tags=["Auth"])
 app.include_router(business_router, prefix="/api/v1/business", tags=["Business"])
 app.include_router(users_router, prefix="/api/v1/business/me/users", tags=["Business Users"])
+app.include_router(business_customers_router, prefix="/api/v1/business/me", tags=["Business Customers"])
 app.include_router(services_router, prefix="/api/v1/business/me/services", tags=["Business Services"])
 app.include_router(bookings_router, prefix="/api/v1/business/me/bookings", tags=["Business Bookings"])
 

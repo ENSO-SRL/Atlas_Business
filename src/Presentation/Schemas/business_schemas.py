@@ -116,3 +116,33 @@ class CreateCustomFieldRequest(BaseModel):
     options: list[str] | None = None
     minimum: float | None = None
     maximum: float | None = None
+
+# ─── Customers & Bookings ───
+
+class BusinessCustomerResponse(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    phone: str
+    email: str | None
+    gender: str | None
+    created_at: str | None
+
+class PaginatedBusinessCustomerResponse(BaseModel):
+    items: list[BusinessCustomerResponse]
+    total: int
+
+class CustomerBookingResponse(BaseModel):
+    id: UUID
+    service_id: UUID
+    service_name: str
+    bookable_object_name: str
+    start_time: str
+    end_time: str
+    party_size: int
+    calculated_amount: str | None
+    created_at: str | None
+
+class PaginatedCustomerBookingResponse(BaseModel):
+    items: list[CustomerBookingResponse]
+    total: int

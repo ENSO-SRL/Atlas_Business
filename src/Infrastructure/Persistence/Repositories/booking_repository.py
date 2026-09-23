@@ -33,6 +33,7 @@ class BookingRepository(BaseRepository, IBookingRepository):
             end_time=model.end_time,
             party_size=model.party_size,
             calculated_amount=model.calculated_amount,
+            customer_id=model.customer_id,
             custom_fields=model.custom_fields or {},
             created_at=model.created_at,
             created_by=model.created_by,
@@ -110,3 +111,42 @@ class BookingRepository(BaseRepository, IBookingRepository):
         result = await self.session.execute(stmt)
         model = result.unique().scalar_one_or_none()
         return self._to_entity(model) if model else None
+
+    async def list_by_customer(
+        self,
+        customer_id: UUID,
+        business_id: UUID,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Booking], int]:
+        base_stmt = (
+            select(BookingModel)
+            .join(ServiceModel, BookingModel.service_id == ServiceModel.id)
+            .options(
+                joinedload(BookingModel.service),
+                joinedload(BookingModel.bookable_object),
+            )
+            .where(
+                BookingModel.customer_id == customer_id,
+                ServiceModel.business_id == business_id
+            )
+        )
+        
+        count_stmt = (
+            select(func.count())
+            .select_from(BookingModel)
+            .join(ServiceModel, BookingModel.service_id == ServiceModel.id)
+            .where(
+                BookingModel.customer_id == customer_id,
+                ServiceModel.business_id == business_id
+            )
+        )
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar_one()
+
+        offset = (page - 1) * page_size
+        paged_stmt = base_stmt.order_by(BookingModel.start_time.desc()).limit(page_size).offset(offset)
+        result = await self.session.execute(paged_stmt)
+        items = [self._to_entity(m) for m in result.unique().scalars().all()]
+
+        return items, total

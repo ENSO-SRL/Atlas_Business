@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Domain.Entities.business_customer import BusinessCustomer
@@ -59,6 +59,24 @@ class BusinessCustomerRepository(BaseRepository, IBusinessCustomerRepository):
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_entity(model) if model else None
+
+    async def list_paginated_by_business(
+        self, business_id: UUID, page: int, page_size: int
+    ) -> tuple[list[BusinessCustomer], int]:
+        
+        base_stmt = select(BusinessCustomerModel).where(BusinessCustomerModel.business_id == business_id)
+        
+        # Total
+        count_stmt = select(func.count()).select_from(base_stmt.subquery())
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar() or 0
+        
+        # Paginated items
+        stmt = base_stmt.order_by(BusinessCustomerModel.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        items_result = await self.session.execute(stmt)
+        models = items_result.scalars().all()
+        
+        return [self._to_entity(m) for m in models], total
 
     async def create(self, entity: BusinessCustomer) -> BusinessCustomer:
         model = self._to_model(entity)
