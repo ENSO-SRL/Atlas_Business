@@ -48,6 +48,11 @@ class BookingModel(Base):
         sa.ForeignKey("bookable_object.id", ondelete="RESTRICT"),
         nullable=False,
     )
+    customer_id: Mapped[UUID | None] = mapped_column(
+        sa.UUID(as_uuid=True),
+        sa.ForeignKey("business_customer.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     # TIMESTAMPTZ — siempre UTC en la BD, conversión a zona local en presentación.
     start_time: Mapped[datetime] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False)
@@ -68,3 +73,4 @@ class BookingModel(Base):
     # Relaciones ORM
     service = relationship("ServiceModel", back_populates="bookings", lazy="select")
     bookable_object = relationship("BookableObjectModel", back_populates="bookings", lazy="select")
+    customer = relationship("BusinessCustomerModel", back_populates="bookings", lazy="select")

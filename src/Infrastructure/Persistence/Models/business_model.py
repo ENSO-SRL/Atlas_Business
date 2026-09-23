@@ -77,3 +77,4 @@ class BusinessModel(Base):
     services = relationship("ServiceModel", back_populates="business", lazy="select")
     users = relationship("BusinessUserModel", back_populates="business", lazy="select")
     custom_fields = relationship("CustomFieldModel", back_populates="business", lazy="select")
+    customers = relationship("BusinessCustomerModel", back_populates="business", lazy="select")

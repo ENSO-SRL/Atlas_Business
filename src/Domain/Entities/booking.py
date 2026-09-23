@@ -15,6 +15,7 @@ class Booking:
     start_time: datetime
     end_time: datetime
     party_size: int
+    customer_id: UUID | None = None
     calculated_amount: Decimal | None = None
     custom_fields: dict[str, Any] = field(default_factory=dict)
     created_at: datetime | None = None
