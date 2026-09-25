@@ -43,6 +43,16 @@ class CustomFieldNotFoundError(ApplicationError):
         super().__init__("El campo personalizado no fue encontrado o no pertenece al servicio.")
 
 
+class CustomerAlreadyExistsError(ApplicationError):
+    def __init__(self, phone: str):
+        super().__init__(f"Ya existe un cliente registrado con el teléfono '{phone}'.")
+
+
+class CustomerNotFoundError(ApplicationError):
+    def __init__(self):
+        super().__init__("El cliente no fue encontrado o no pertenece al negocio.")
+
+
 class BookingNotFoundError(ApplicationError):
     def __init__(self):
         super().__init__("La reserva no fue encontrada o no pertenece al negocio.")

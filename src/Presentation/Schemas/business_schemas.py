@@ -40,6 +40,26 @@ class UpdateBusinessRequest(BaseModel):
     schedules: list[ScheduleIn] | None = None
     agent_metadata: AgentMetadataIn | None = None
 
+# ─── Bookings ───
+
+class CreateInternalBookingRequest(BaseModel):
+    service_id: UUID
+    customer_id: UUID
+    date: str
+    start_time: str
+    party_size: int = Field(..., gt=0)
+    bookable_object_id: UUID | None = None
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
+
+# ─── Customers ───
+
+class CreateCustomerRequest(BaseModel):
+    first_name: str = Field(..., max_length=100)
+    last_name: str = Field(..., max_length=100)
+    phone: str = Field(..., max_length=30)
+    email: EmailStr | None = None
+    gender: str | None = None
+
 # ─── Usuarios ───
 
 class CreateUserRequest(BaseModel):

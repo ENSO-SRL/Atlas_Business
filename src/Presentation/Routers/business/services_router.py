@@ -20,6 +20,9 @@ from src.Application.UseCases.Business.create_custom_field import CreateCustomFi
 from src.Application.UseCases.Business.delete_custom_field import DeleteCustomFieldCommand, DeleteCustomFieldUseCase
 from src.Application.UseCases.Business.list_custom_fields import ListCustomFieldsCommand, ListCustomFieldsUseCase
 
+from src.Application.UseCases.Business.get_service_availability import GetServiceAvailabilityCommand, GetServiceAvailabilityUseCase
+from src.Application.UseCases.Business.get_available_objects import GetAvailableObjectsCommand, GetAvailableObjectsUseCase
+
 # Ports
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
@@ -40,8 +43,10 @@ from src.Presentation.Dependencies.repositories import (
     get_service_category_repo,
     get_service_rate_repo,
     get_service_repo,
+    get_client_booking_repo,
 )
 from src.Presentation.Dependencies.services import get_content_filter_service
+from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
 from src.Presentation.Schemas.business_schemas import (
     CreateBookableObjectRequest,
     CreateCustomFieldRequest,
@@ -335,3 +340,61 @@ async def delete_custom_field(
     )
     await use_case.execute(command)
     return None
+
+
+# ─── Disponibilidad ───
+
+from datetime import date
+
+@router.get("/{service_id}/availability")
+async def get_service_availability(
+    service_id: UUID,
+    date_val: date,
+    party_size: int = 1,
+    user: UserContext = Depends(get_current_user),
+    service_repo: IServiceRepository = Depends(get_service_repo),
+    business_repo: IBusinessRepository = Depends(get_business_repo),
+    bookable_object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
+    client_booking_repo: IClientBookingRepository = Depends(get_client_booking_repo),
+    rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
+):
+    use_case = GetServiceAvailabilityUseCase(
+        service_repo=service_repo,
+        business_repo=business_repo,
+        bookable_object_repo=bookable_object_repo,
+        client_booking_repo=client_booking_repo,
+        rate_repo=rate_repo,
+    )
+    command = GetServiceAvailabilityCommand(
+        business_id=user.business_id,
+        service_id=service_id,
+        date=date_val,
+        party_size=party_size,
+    )
+    return await use_case.execute(command)
+
+
+@router.get("/{service_id}/availability/objects")
+async def get_available_objects(
+    service_id: UUID,
+    date_val: date,
+    start_time: str,
+    party_size: int = 1,
+    user: UserContext = Depends(get_current_user),
+    service_repo: IServiceRepository = Depends(get_service_repo),
+    bookable_object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
+    client_booking_repo: IClientBookingRepository = Depends(get_client_booking_repo),
+):
+    use_case = GetAvailableObjectsUseCase(
+        service_repo=service_repo,
+        bookable_object_repo=bookable_object_repo,
+        client_booking_repo=client_booking_repo,
+    )
+    command = GetAvailableObjectsCommand(
+        business_id=user.business_id,
+        service_id=service_id,
+        date=date_val,
+        start_time=start_time,
+        party_size=party_size,
+    )
+    return await use_case.execute(command)
