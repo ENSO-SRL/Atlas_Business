@@ -45,7 +45,7 @@ class BookingRepository(BaseRepository, IBookingRepository):
         booking.bookable_object = model.bookable_object  # type: ignore[attr-defined]
         return booking
 
-    def _base_stmt(self, business_id: UUID, service_id: UUID | None, filter_date: date | None):
+    def _base_stmt(self, business_id: UUID, service_id: UUID | None, date_from: date | None, date_to: date | None):
         stmt = (
             select(BookingModel)
             .join(ServiceModel, BookingModel.service_id == ServiceModel.id)
@@ -57,19 +57,23 @@ class BookingRepository(BaseRepository, IBookingRepository):
         )
         if service_id is not None:
             stmt = stmt.where(BookingModel.service_id == service_id)
-        if filter_date is not None:
-            stmt = stmt.where(sa.cast(BookingModel.start_time, sa.Date) == filter_date)
+        if date_from is not None:
+            stmt = stmt.where(BookingModel.start_time >= date_from)
+        if date_to is not None:
+            from datetime import timedelta
+            stmt = stmt.where(BookingModel.start_time < date_to + timedelta(days=1))
         return stmt
 
     async def list_by_business(
         self,
         business_id: UUID,
         service_id: UUID | None = None,
-        filter_date: date | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Booking], int]:
-        base = self._base_stmt(business_id, service_id, filter_date)
+        base = self._base_stmt(business_id, service_id, date_from, date_to)
 
         # Total count
         count_stmt = (
@@ -80,10 +84,11 @@ class BookingRepository(BaseRepository, IBookingRepository):
         )
         if service_id is not None:
             count_stmt = count_stmt.where(BookingModel.service_id == service_id)
-        if filter_date is not None:
-            count_stmt = count_stmt.where(
-                sa.cast(BookingModel.start_time, sa.Date) == filter_date
-            )
+        if date_from is not None:
+            count_stmt = count_stmt.where(BookingModel.start_time >= date_from)
+        if date_to is not None:
+            from datetime import timedelta
+            count_stmt = count_stmt.where(BookingModel.start_time < date_to + timedelta(days=1))
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar_one()

@@ -30,7 +30,8 @@ router = APIRouter()
 @router.get("/")
 async def list_business_bookings(
     service_id: UUID | None = None,
-    filter_date: date | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     page: int = 1,
     page_size: int = 20,
     user: UserContext = Depends(get_current_user),
@@ -40,7 +41,8 @@ async def list_business_bookings(
     command = ListBusinessBookingsCommand(
         business_id=user.business_id,
         service_id=service_id,
-        filter_date=filter_date,
+        date_from=date_from,
+        date_to=date_to,
         page=page,
         page_size=page_size,
     )

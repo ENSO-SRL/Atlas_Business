@@ -11,12 +11,14 @@ class IBookingRepository(ABC):
         self,
         business_id: UUID,
         service_id: UUID | None = None,
-        filter_date: date | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Booking], int]:
         """
         Devuelve (items, total) para paginación.
+        Filtros de rango opcionales: date_from (>=) y date_to (< date_to + 1 día).
         """
         ...
 

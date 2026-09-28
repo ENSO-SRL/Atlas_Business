@@ -9,7 +9,8 @@ from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepositor
 class ListBusinessBookingsCommand:
     business_id: UUID
     service_id: UUID | None = None
-    filter_date: date | None = None
+    date_from: date | None = None
+    date_to: date | None = None
     page: int = 1
     page_size: int = 20
 
@@ -49,7 +50,8 @@ class ListBusinessBookingsUseCase:
         bookings, total = await self.booking_repo.list_by_business(
             business_id=command.business_id,
             service_id=command.service_id,
-            filter_date=command.filter_date,
+            date_from=command.date_from,
+            date_to=command.date_to,
             page=command.page,
             page_size=command.page_size,
         )
