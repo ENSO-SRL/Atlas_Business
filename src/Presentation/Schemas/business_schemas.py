@@ -139,6 +139,31 @@ class CreateCustomFieldRequest(BaseModel):
 
 # ─── Customers & Bookings ───
 
+class CustomerSummaryResponse(BaseModel):
+    id: UUID
+    full_name: str
+    phone: str
+
+class BusinessBookingResponse(BaseModel):
+    id: UUID
+    service_id: UUID
+    service_name: str
+    bookable_object_id: UUID
+    bookable_object_name: str | None
+    start_time: str
+    end_time: str
+    party_size: int
+    calculated_amount: str | None
+    custom_fields: dict
+    customer: CustomerSummaryResponse | None
+    created_at: str | None
+
+class PaginatedBusinessBookingResponse(BaseModel):
+    items: list[BusinessBookingResponse]
+    total: int
+    page: int
+    page_size: int
+
 class BusinessCustomerResponse(BaseModel):
     id: UUID
     first_name: str

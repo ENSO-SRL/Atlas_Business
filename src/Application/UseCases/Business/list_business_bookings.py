@@ -16,6 +16,13 @@ class ListBusinessBookingsCommand:
 
 
 @dataclass
+class CustomerSummary:
+    id: UUID
+    full_name: str
+    phone: str
+
+
+@dataclass
 class BookingSummaryResult:
     id: UUID
     service_id: UUID
@@ -27,6 +34,7 @@ class BookingSummaryResult:
     party_size: int
     calculated_amount: str | None
     custom_fields: dict
+    customer: CustomerSummary | None
     created_at: str | None
 
 
@@ -64,6 +72,14 @@ class ListBusinessBookingsUseCase:
             service_name = b.service.name if b.service else "Desconocido"
             object_name = b.bookable_object.name if b.bookable_object else None
 
+            customer_summary = None
+            if b.customer:
+                customer_summary = CustomerSummary(
+                    id=b.customer.id,
+                    full_name=f"{b.customer.first_name} {b.customer.last_name}".strip(),
+                    phone=b.customer.phone,
+                )
+
             items.append(
                 BookingSummaryResult(
                     id=b.id,
@@ -76,6 +92,7 @@ class ListBusinessBookingsUseCase:
                     party_size=b.party_size,
                     calculated_amount=str(b.calculated_amount) if b.calculated_amount is not None else None,
                     custom_fields=b.custom_fields,
+                    customer=customer_summary,
                     created_at=b.created_at.isoformat() if b.created_at else None,
                 )
             )

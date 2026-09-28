@@ -11,6 +11,9 @@ from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepositor
 from src.Infrastructure.Persistence.Models.booking_model import BookingModel
 from src.Infrastructure.Persistence.Models.service_model import ServiceModel
 from src.Infrastructure.Persistence.Repositories.base_repository import BaseRepository
+from src.Infrastructure.Persistence.Repositories.service_repository import ServiceRepository
+from src.Infrastructure.Persistence.Repositories.bookable_object_repository import BookableObjectRepository
+from src.Infrastructure.Persistence.Repositories.business_customer_repository import BusinessCustomerRepository
 
 
 class BookingRepository(BaseRepository, IBookingRepository):
@@ -40,9 +43,13 @@ class BookingRepository(BaseRepository, IBookingRepository):
             updated_at=model.updated_at,
             updated_by=model.updated_by,
         )
-        # Adjuntar relaciones cargadas como atributos temporales para el UC
-        booking.service = model.service  # type: ignore[attr-defined]
-        booking.bookable_object = model.bookable_object  # type: ignore[attr-defined]
+        # Mapear relaciones cargadas a entidades de dominio
+        if getattr(model, "service", None):
+            booking.service = ServiceRepository._to_entity(model.service)
+        if getattr(model, "bookable_object", None):
+            booking.bookable_object = BookableObjectRepository._to_entity(model.bookable_object)
+        if getattr(model, "customer", None):
+            booking.customer = BusinessCustomerRepository._to_entity(model.customer)
         return booking
 
     def _base_stmt(self, business_id: UUID, service_id: UUID | None, date_from: date | None, date_to: date | None):
@@ -52,6 +59,7 @@ class BookingRepository(BaseRepository, IBookingRepository):
             .options(
                 joinedload(BookingModel.service),
                 joinedload(BookingModel.bookable_object),
+                joinedload(BookingModel.customer),
             )
             .where(ServiceModel.business_id == business_id)
         )

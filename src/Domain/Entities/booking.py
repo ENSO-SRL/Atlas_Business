@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
+from src.Domain.Entities.service import Service
+from src.Domain.Entities.bookable_object import BookableObject
+from src.Domain.Entities.business_customer import BusinessCustomer
 
 @dataclass
 class Booking:
@@ -22,6 +25,11 @@ class Booking:
     created_by: UUID | None = None
     updated_at: datetime | None = None
     updated_by: UUID | None = None
+    
+    # Relaciones cargadas
+    service: Service | None = None
+    bookable_object: BookableObject | None = None
+    customer: BusinessCustomer | None = None
 
     def __post_init__(self):
         if self.start_time.tzinfo is None or self.end_time.tzinfo is None:

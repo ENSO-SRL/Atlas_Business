@@ -22,12 +22,12 @@ from src.Presentation.Dependencies.repositories import (
     get_service_rate_repo,
     get_business_customer_repo,
 )
-from src.Presentation.Schemas.business_schemas import CreateInternalBookingRequest
+from src.Presentation.Schemas.business_schemas import CreateInternalBookingRequest, PaginatedBusinessBookingResponse
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=PaginatedBusinessBookingResponse)
 async def list_business_bookings(
     service_id: UUID | None = None,
     date_from: date | None = None,
