@@ -115,6 +115,7 @@ class BookingRepository(BaseRepository, IBookingRepository):
             .options(
                 joinedload(BookingModel.service),
                 joinedload(BookingModel.bookable_object),
+                joinedload(BookingModel.customer)
             )
             .where(
                 BookingModel.id == id,
