@@ -41,7 +41,11 @@ class BusinessModel(Base):
         nullable=False,
         server_default="PENDING_VERIFICATION",
     )
-    address: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    province: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    municipality: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    neighborhood: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    street_address: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    reference: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     maps_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     phone: Mapped[str] = mapped_column(sa.String(30), nullable=False)
 

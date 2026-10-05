@@ -24,7 +24,11 @@ class UpdateBusinessCommand:
     actor_id: UUID  # Para updated_by
     name: str | None = None
     phone: str | None = None
-    address: str | None = None
+    province: str | None = None
+    municipality: str | None = None
+    neighborhood: str | None = None
+    street_address: str | None = None
+    reference: str | None = None
     maps_url: str | None = None
     aliases: list[str] | None = None
     schedules: list[ScheduleInput] | None = None
@@ -63,8 +67,20 @@ class UpdateBusinessUseCase:
         if command.phone is not None:
             business.phone = command.phone
             business_changed = True
-        if command.address is not None:
-            business.address = command.address
+        if command.province is not None:
+            business.province = command.province
+            business_changed = True
+        if command.municipality is not None:
+            business.municipality = command.municipality
+            business_changed = True
+        if command.neighborhood is not None:
+            business.neighborhood = command.neighborhood
+            business_changed = True
+        if command.street_address is not None:
+            business.street_address = command.street_address
+            business_changed = True
+        if command.reference is not None:
+            business.reference = command.reference
             business_changed = True
         if command.maps_url is not None:
             business.maps_url = command.maps_url

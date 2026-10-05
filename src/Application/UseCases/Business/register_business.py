@@ -37,7 +37,11 @@ class RegisterBusinessCommand:
     name: str
     #category: str
     platform: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
     phone: str
     rnc: str
     category_id: uuid.UUID
@@ -153,7 +157,11 @@ class RegisterBusinessUseCase:
             category_id=command.category_id,
             platform=Platform(command.platform),
             verification_status=initial_status,
-            address=command.address,
+            province=command.province,
+            municipality=command.municipality,
+            neighborhood=command.neighborhood,
+            street_address=command.street_address,
+            reference=command.reference,
             maps_url=command.maps_url,
             phone=command.phone,
             aliases=command.aliases,

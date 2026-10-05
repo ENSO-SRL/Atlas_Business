@@ -30,7 +30,11 @@ class Business:
     code: str
     name: str
     platform: Platform
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
     phone: str
     rnc: str
     category_id: UUID

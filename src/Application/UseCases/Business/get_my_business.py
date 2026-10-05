@@ -20,7 +20,11 @@ class BusinessProfileResult:
     category: str
     platform: str
     verification_status: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
     maps_url: str | None
     phone: str
     aliases: list[str]
@@ -65,7 +69,11 @@ class GetMyBusinessUseCase:
             category=business.category_name,
             platform=business.platform.value,
             verification_status=business.verification_status.value,
-            address=business.address,
+            province=business.province,
+            municipality=business.municipality,
+            neighborhood=business.neighborhood,
+            street_address=business.street_address,
+            reference=business.reference,
             maps_url=business.maps_url,
             phone=business.phone,
             aliases=business.aliases,

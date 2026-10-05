@@ -22,8 +22,12 @@ class RegisterBusinessRequest(BaseModel):
     rnc: str
     category_id: UUID
     platform: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
     phone: str
+    reference: str | None = None
     maps_url: str | None = None
     aliases: list[str] = []
     schedules: list[ScheduleIn] = []
@@ -35,7 +39,11 @@ class RegisterBusinessRequest(BaseModel):
 class UpdateBusinessRequest(BaseModel):
     name: str | None = None
     phone: str | None = None
-    address: str | None = None
+    province: str | None = None
+    municipality: str | None = None
+    neighborhood: str | None = None
+    street_address: str | None = None
+    reference: str | None = None
     maps_url: str | None = None
     aliases: list[str] | None = None
     schedules: list[ScheduleIn] | None = None
