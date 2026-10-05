@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from uuid import UUID
 
-from src.Application.Exceptions.client_exceptions import InvalidDateError, InvalidPartySizeError, ServiceNotPublicError
+from src.Application.Exceptions.client_exceptions import InvalidDateError, InvalidPartySizeError, ServiceNotPublicError, BookingWindowExceededError
 from src.Domain.Entities.service import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
@@ -75,6 +75,11 @@ class GetServiceAvailabilityUseCase:
         if not service:
             raise ServiceNotPublicError()
 
+        # Validación 1: max_booking_window_days
+        max_date = today + timedelta(days=service.max_booking_window_days)
+        if command.date > max_date:
+            raise BookingWindowExceededError()
+
         # 1. Identificar objetos calificados por capacidad
         all_objects = await self.bookable_object_repo.list_by_service(service.id)
         qualified_objects = [
@@ -140,7 +145,14 @@ class GetServiceAvailabilityUseCase:
         result_slots = []
 
         # 5. Sweep de ocupación combinada por slot candidato
+        now_utc = datetime.now(timezone.utc)
+        
         for slot_start in candidate_slots:
+            # Validación 2: min_booking_window_hours
+            limit_time = now_utc + timedelta(hours=service.min_booking_window_hours)
+            if slot_start <= limit_time:
+                continue
+
             available = self._slot_available_count(
                 slot_start,
                 total_duration,

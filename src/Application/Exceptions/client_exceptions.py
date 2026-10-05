@@ -23,6 +23,21 @@ class InvalidDateError(ApplicationError):
         super().__init__("La fecha no puede ser en el pasado.")
 
 
+class BookingWindowExceededError(ApplicationError):
+    def __init__(self):
+        super().__init__("Esos horarios aún no están disponibles para reserva.")
+
+
+class MinimumBookingNoticeRequiredError(ApplicationError):
+    def __init__(self):
+        super().__init__("El horario solicitado ya no está disponible por restricción de tiempo anticipado.")
+
+
+class DailyBookingLimitExceededError(ApplicationError):
+    def __init__(self):
+        super().__init__("Has alcanzado el límite máximo de reservas por día en este servicio.")
+
+
 class SlotNoLongerAvailableError(ApplicationError):
     def __init__(self):
         super().__init__("El slot solicitado ya no tiene objetos disponibles. Por favor, consulta la disponibilidad nuevamente.")

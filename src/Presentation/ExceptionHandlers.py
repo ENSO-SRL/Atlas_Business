@@ -22,6 +22,9 @@ from src.Application.Exceptions.client_exceptions import (
     InvalidPartySizeError,
     SlotNoLongerAvailableError,
     CustomFieldValidationError,
+    BookingWindowExceededError,
+    MinimumBookingNoticeRequiredError,
+    DailyBookingLimitExceededError,
 )
 
 # Excepciones de Infraestructura
@@ -65,6 +68,18 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(InvalidPartySizeError)
     async def invalid_party_size_handler(request: Request, exc: InvalidPartySizeError):
         return JSONResponse(status_code=400, content={"error": "INVALID_PARTY_SIZE", "detail": str(exc)})
+
+    @app.exception_handler(BookingWindowExceededError)
+    async def booking_window_exceeded_handler(request: Request, exc: BookingWindowExceededError):
+        return JSONResponse(status_code=400, content={"error": "BOOKING_WINDOW_EXCEEDED", "detail": str(exc)})
+
+    @app.exception_handler(MinimumBookingNoticeRequiredError)
+    async def minimum_booking_notice_handler(request: Request, exc: MinimumBookingNoticeRequiredError):
+        return JSONResponse(status_code=400, content={"error": "MINIMUM_BOOKING_NOTICE_REQUIRED", "detail": str(exc)})
+
+    @app.exception_handler(DailyBookingLimitExceededError)
+    async def daily_booking_limit_exceeded_handler(request: Request, exc: DailyBookingLimitExceededError):
+        return JSONResponse(status_code=400, content={"error": "DAILY_BOOKING_LIMIT_EXCEEDED", "detail": str(exc)})
 
     @app.exception_handler(SlotNoLongerAvailableError)
     async def slot_no_longer_available_handler(request: Request, exc: SlotNoLongerAvailableError):

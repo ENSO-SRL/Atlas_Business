@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from src.Application.Exceptions.client_exceptions import CustomFieldValidationError, InvalidPartySizeError, ServiceNotPublicError, SlotNoLongerAvailableError
+from src.Application.Exceptions.client_exceptions import CustomFieldValidationError, InvalidPartySizeError, ServiceNotPublicError, SlotNoLongerAvailableError, BookingWindowExceededError, MinimumBookingNoticeRequiredError, DailyBookingLimitExceededError
 from src.Domain.Entities.booking import Booking
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
@@ -94,6 +94,34 @@ class CreateBookingUseCase:
         slot_end = slot_start + timedelta(minutes=service.occupation_duration_minutes)
         booking_end = slot_start + timedelta(minutes=service.occupation_duration_minutes + service.buffer_minutes)
 
+        # Validación 1: max_booking_window_days
+        now_utc = datetime.now(timezone.utc)
+        today = now_utc.date()
+        max_date = today + timedelta(days=service.max_booking_window_days)
+        if command.date > max_date:
+            raise BookingWindowExceededError()
+
+        # Validación 2: min_booking_window_hours
+        limit_time = now_utc + timedelta(hours=service.min_booking_window_hours)
+        if slot_start <= limit_time:
+            raise MinimumBookingNoticeRequiredError()
+
+        # Obtener/Crear cliente antes de verificar el límite diario
+        customer_cmd = GetOrCreateBusinessCustomerCommand(
+            business_id=service.business_id,
+            phone=command.customer_phone,
+        )
+        customer_result = await self.get_or_create_customer_uc.execute(customer_cmd)
+        
+        # Validación 3: max_daily_bookings_per_user
+        active_bookings_count = await self.client_booking_repo.count_active_bookings_by_customer(
+            service_id=service.id,
+            customer_id=customer_result.id,
+            target_date=command.date
+        )
+        if active_bookings_count >= service.max_daily_bookings_per_user:
+            raise DailyBookingLimitExceededError()
+
         # 2. Determinar el bookable_object_id
         assigned_object = None
         all_objects = await self.bookable_object_repo.list_by_service(service.id)
@@ -141,12 +169,7 @@ class CreateBookingUseCase:
             if rate_info:
                 calculated_amount = rate_info
 
-        # 3.5. Obtener o crear el cliente
-        customer_command = GetOrCreateBusinessCustomerCommand(
-            business_id=service.business_id,
-            phone=command.customer_phone
-        )
-        customer = await self.get_or_create_customer_uc.execute(customer_command)
+        # 3.5. (El cliente ya fue obtenido/creado en la Validación 3)
 
         # 4. Crear reserva
         try:
@@ -159,7 +182,7 @@ class CreateBookingUseCase:
             #business_id=service.business_id,
             service_id=service.id,
             bookable_object_id=assigned_object.id,
-            customer_id=customer.id,
+            customer_id=customer_result.id,
             start_time=slot_start,
             end_time=booking_end, # end_time de la reserva incluye el buffer
             party_size=command.party_size,

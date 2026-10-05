@@ -65,3 +65,15 @@ class IClientBookingRepository(ABC):
         lanzar una excepción que la capa superior pueda mapear a SlotNoLongerAvailableError.
         """
         pass
+
+    @abstractmethod
+    async def count_active_bookings_by_customer(
+        self,
+        service_id: UUID,
+        customer_id: UUID,
+        target_date: datetime.date,
+    ) -> int:
+        """
+        Cuenta las reservas activas (CONFIRMED) de un cliente para un servicio en un día específico.
+        """
+        pass

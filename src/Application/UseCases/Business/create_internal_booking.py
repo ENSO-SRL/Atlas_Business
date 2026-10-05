@@ -5,7 +5,7 @@ from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import CustomerNotFoundError, ServiceNotFoundError
-from src.Application.Exceptions.client_exceptions import CustomFieldValidationError, InvalidPartySizeError, SlotNoLongerAvailableError
+from src.Application.Exceptions.client_exceptions import CustomFieldValidationError, InvalidPartySizeError, SlotNoLongerAvailableError, BookingWindowExceededError, MinimumBookingNoticeRequiredError
 from src.Domain.Entities.booking import Booking
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
@@ -94,6 +94,18 @@ class CreateInternalBookingUseCase:
         slot_start = datetime.combine(command.date, time.fromisoformat(command.start_time)).replace(tzinfo=timezone.utc)
         slot_end = slot_start + timedelta(minutes=service.occupation_duration_minutes)
         booking_end = slot_start + timedelta(minutes=service.occupation_duration_minutes + service.buffer_minutes)
+
+        # Validación 1: max_booking_window_days
+        now_utc = datetime.now(timezone.utc)
+        today = now_utc.date()
+        max_date = today + timedelta(days=service.max_booking_window_days)
+        if command.date > max_date:
+            raise BookingWindowExceededError()
+
+        # Validación 2: min_booking_window_hours
+        limit_time = now_utc + timedelta(hours=service.min_booking_window_hours)
+        if slot_start <= limit_time:
+            raise MinimumBookingNoticeRequiredError()
 
         # 2. Determinar el bookable_object_id
         assigned_object = None

@@ -107,3 +107,27 @@ class ClientBookingRepository(BaseRepository, IClientBookingRepository):
             raise
 
         return entity
+
+    async def count_active_bookings_by_customer(
+        self,
+        service_id: UUID,
+        customer_id: UUID,
+        target_date: datetime.date,
+    ) -> int:
+        day_start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        day_end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=timezone.utc)
+        
+        stmt = (
+            select(func.count())
+            .select_from(BookingModel)
+            .where(
+                BookingModel.service_id == service_id,
+                BookingModel.customer_id == customer_id,
+                BookingModel.start_time >= day_start,
+                BookingModel.start_time <= day_end,
+                # BookingModel.status == 'CONFIRMED' # Cuando se agregue status a BD
+            )
+        )
+        
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
