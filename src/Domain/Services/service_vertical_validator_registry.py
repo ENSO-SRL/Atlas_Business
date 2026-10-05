@@ -1,6 +1,7 @@
 from src.Domain.Ports.Services.i_vertical_validator import IVerticalValidator
 from src.Domain.Services.VerticalValidators.generic_validator import GenericVerticalValidator
-from src.Domain.Services.VerticalValidators.court_rental_validator import CourtRentalValidator
+from src.Domain.Services.VerticalValidators.Service.court_rental_validator import CourtRentalValidator
+from src.Domain.Services.VerticalValidators.Service.restaurant_service_validator import RestaurantServiceValidator
 
 class ServiceVerticalValidatorRegistry:
     """
@@ -11,6 +12,7 @@ class ServiceVerticalValidatorRegistry:
     def __init__(self):
         self._validators: dict[str, IVerticalValidator] = {
             "alquiler_cancha": CourtRentalValidator(),
+            "restaurante": RestaurantServiceValidator(),
         }
         self._default_validator = GenericVerticalValidator()
 

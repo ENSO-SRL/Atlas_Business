@@ -1,6 +1,6 @@
 from src.Domain.Ports.Services.i_vertical_validator import IVerticalValidator
 from src.Domain.Services.VerticalValidators.generic_validator import GenericVerticalValidator
-from src.Domain.Services.VerticalValidators.restaurant_table_validator import RestaurantTableValidator
+from src.Domain.Services.VerticalValidators.BookableObject.restaurant_table_validator import RestaurantTableValidator
 
 class BookableObjectVerticalValidatorRegistry:
     """
