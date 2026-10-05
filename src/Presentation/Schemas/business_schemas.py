@@ -91,6 +91,7 @@ class CreateServiceRequest(BaseModel):
     auto_selection_criteria: str
     billing_nature: str
     agent_metadata: AgentMetadataIn
+    vertical_metadata: dict[str, Any] = Field(default_factory=dict)
     rates: list[RateIn] | None = None
 
 class UpdateServiceRequest(BaseModel):
@@ -100,6 +101,7 @@ class UpdateServiceRequest(BaseModel):
     grid_interval_minutes: int | None = None
     exposes_end_time: bool | None = None
     agent_metadata: AgentMetadataIn | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
 # ─── Bookable Objects ───
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Any
 from uuid import UUID
 
 from src.Domain.Enums.publication_status import PublicationStatus
@@ -37,10 +38,11 @@ class Service:
     category_id: UUID
     publication_status: PublicationStatus = PublicationStatus.DRAFT
     rejection_reason: str | None = None
-    created_at: datetime | None = None
     created_by: UUID | None = None
     updated_at: datetime | None = None
     updated_by: UUID | None = None
+    vertical_metadata: dict[str, Any] | None = None
+    created_at: datetime | None = None
 
     def __post_init__(self):
         if not self.name or not self.name.strip():

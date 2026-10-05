@@ -38,6 +38,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             created_by=model.created_by,
             updated_at=model.updated_at,
             updated_by=model.updated_by,
+            vertical_metadata=model.vertical_metadata or {},
         )
 
     async def list_by_business(
@@ -76,6 +77,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             category_id=entity.category_id,
             publication_status=entity.publication_status.value,
             rejection_reason=entity.rejection_reason,
+            vertical_metadata=entity.vertical_metadata,
             created_at=entity.created_at,
             created_by=entity.created_by,
         )
@@ -94,6 +96,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
                 exposes_end_time=entity.exposes_end_time,
                 publication_status=entity.publication_status.value,
                 rejection_reason=entity.rejection_reason,
+                vertical_metadata=entity.vertical_metadata,
                 updated_at=entity.updated_at,
                 updated_by=entity.updated_by,
             )

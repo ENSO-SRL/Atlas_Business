@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import ServiceNotFoundError
@@ -35,6 +36,7 @@ class ServiceDetailResult:
     billing_nature: str
     rejection_reason: str | None
     agent_metadata: dict
+    vertical_metadata: dict[str, Any]
     pending_edit_request: PendingEditRequest | None
 
 
@@ -89,5 +91,6 @@ class GetServiceUseCase:
             billing_nature=service.billing_nature.value,
             rejection_reason=service.rejection_reason,
             agent_metadata=metadata_dict,
+            vertical_metadata=service.vertical_metadata or {},
             pending_edit_request=pending_request_dto,
         )

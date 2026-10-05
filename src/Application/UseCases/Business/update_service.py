@@ -1,6 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import ServiceNotFoundError, ServiceNotPublishedError
@@ -12,7 +13,8 @@ from src.Domain.Ports.Repositories.i_content_request_repository import IContentR
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
-from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError
+from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError, VerticalMetadataValidationError
+from src.Domain.Services.service_vertical_validator_registry import ServiceVerticalValidatorRegistry
 
 
 @dataclass
@@ -29,6 +31,7 @@ class UpdateServiceCommand:
     buffer_minutes: int | None = None
     grid_interval_minutes: int | None = None
     exposes_end_time: bool | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -57,6 +60,7 @@ class UpdateServiceUseCase:
         self.content_request_repo = content_request_repo
         self.content_filter = content_filter
         self.service_category_repo = service_category_repo
+        self.vertical_registry = ServiceVerticalValidatorRegistry()
 
     async def execute(self, command: UpdateServiceCommand) -> UpdateServiceResult:
         service = await self.service_repo.get_by_id(command.service_id, command.business_id)
@@ -70,6 +74,16 @@ class UpdateServiceUseCase:
             category = await self.service_category_repo.get_by_id(command.category_id)
             if not category or not category.is_active:
                 raise ServiceCategoryNotFoundError()
+            category_name = category.name
+        else:
+            category = await self.service_category_repo.get_by_id(service.category_id)
+            category_name = category.name if category else ""
+
+        if command.vertical_metadata is not None:
+            validator = self.vertical_registry.get_validator(category_name)
+            is_valid, error_msg = validator.validate(command.vertical_metadata)
+            if not is_valid:
+                raise VerticalMetadataValidationError(error_msg or "Estructura de metadatos inválida.")
 
         # Construir payload de cambios
         payload = {}
@@ -83,6 +97,8 @@ class UpdateServiceUseCase:
             payload["grid_interval_minutes"] = command.grid_interval_minutes
         if command.exposes_end_time is not None and command.exposes_end_time != service.exposes_end_time:
             payload["exposes_end_time"] = command.exposes_end_time
+        if command.vertical_metadata is not None and command.vertical_metadata != service.vertical_metadata:
+            payload["vertical_metadata"] = command.vertical_metadata
 
         metadata = await self.agent_metadata_repo.get_by_id(service.agent_metadata_id)
         
@@ -126,6 +142,7 @@ class UpdateServiceUseCase:
             if "buffer_minutes" in payload: service.buffer_minutes = payload["buffer_minutes"]
             if "grid_interval_minutes" in payload: service.grid_interval_minutes = payload["grid_interval_minutes"]
             if "exposes_end_time" in payload: service.exposes_end_time = payload["exposes_end_time"]
+            if "vertical_metadata" in payload: service.vertical_metadata = payload["vertical_metadata"]
             
             if metadata:
                 if "description" in payload: metadata.description = payload["description"]

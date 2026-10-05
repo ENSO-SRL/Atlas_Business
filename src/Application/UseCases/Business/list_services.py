@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Domain.Enums.publication_status import PublicationStatus
@@ -24,6 +25,7 @@ class ServiceSummaryResult:
     allows_manual_object_selection: bool
     billing_nature: str
     rejection_reason: str | None
+    vertical_metadata: dict[str, Any]
 
 
 class ListServicesUseCase:
@@ -51,6 +53,7 @@ class ListServicesUseCase:
                 allows_manual_object_selection=s.allows_manual_object_selection,
                 billing_nature=s.billing_nature.value,
                 rejection_reason=s.rejection_reason,
+                vertical_metadata=s.vertical_metadata or {},
             )
             for s in services
         ]

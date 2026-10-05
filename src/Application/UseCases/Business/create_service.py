@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Domain.Entities.agent_metadata import AgentMetadata
@@ -14,8 +15,9 @@ from src.Domain.Ports.Repositories.i_service_repository import IServiceRepositor
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_service_rate_repository import IServiceRateRepository
 from src.Domain.Ports.Services.i_content_filter_service import IContentFilterService
-from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError, RatesRequiredForBillableServiceError
+from src.Application.Exceptions.business_exceptions import ServiceCategoryNotFoundError, RatesRequiredForBillableServiceError, VerticalMetadataValidationError
 from src.Application.UseCases.Business.replace_service_rates import ReplaceServiceRatesUseCase, ReplaceServiceRatesCommand, RateInput
+from src.Domain.Services.service_vertical_validator_registry import ServiceVerticalValidatorRegistry
 
 
 @dataclass
@@ -35,6 +37,7 @@ class CreateServiceCommand:
     description: str
     establishment_policies: list[str]
     pre_booking_requirements: list[str]
+    vertical_metadata: dict[str, Any]
     rates: list[RateInput] | None = None
 
 
@@ -66,6 +69,7 @@ class CreateServiceUseCase:
         self.service_category_repo = service_category_repo
         self.business_repo = business_repo
         self.rate_repo = rate_repo
+        self.vertical_registry = ServiceVerticalValidatorRegistry()
 
     async def execute(self, command: CreateServiceCommand) -> CreateServiceResult:
         # Validar tarifas si es facturable
@@ -77,6 +81,12 @@ class CreateServiceUseCase:
         category = await self.service_category_repo.get_by_id(command.category_id)
         if not category or not category.is_active:
             raise ServiceCategoryNotFoundError()
+
+        # Validar vertical_metadata
+        validator = self.vertical_registry.get_validator(category.name)
+        is_valid, error_msg = validator.validate(command.vertical_metadata)
+        if not is_valid:
+            raise VerticalMetadataValidationError(error_msg or "Estructura de metadatos inválida.")
 
         try:
             metadata_id = uuid.uuid7()
@@ -124,6 +134,7 @@ class CreateServiceUseCase:
             category_id=command.category_id,
             publication_status=initial_status,
             created_by=command.actor_id,
+            vertical_metadata=command.vertical_metadata,
         )
         
         await self.service_repo.create(service)

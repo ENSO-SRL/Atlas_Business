@@ -76,6 +76,10 @@ class ServiceModel(Base):
     )
     # Motivo de rechazo en la moderación de creación. Nulo si no fue rechazado.
     rejection_reason: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    
+    vertical_metadata: Mapped[dict] = mapped_column(
+        sa.JSON, nullable=False, server_default=sa.text("'{}'::jsonb")
+    )
 
     # Campos de auditoría
     created_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)

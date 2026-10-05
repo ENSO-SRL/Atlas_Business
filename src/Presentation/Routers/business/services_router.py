@@ -115,6 +115,7 @@ async def create_service(
         description=body.agent_metadata.description,
         establishment_policies=body.agent_metadata.establishment_policies,
         pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
+        vertical_metadata=body.vertical_metadata,
         rates=mapped_rates,
         actor_id=user.user_id,
     )
@@ -165,10 +166,10 @@ async def update_service(
         buffer_minutes=body.buffer_minutes,
         grid_interval_minutes=body.grid_interval_minutes,
         exposes_end_time=body.exposes_end_time,
-        description=body.agent_metadata.description,
-        establishment_policies=body.agent_metadata.establishment_policies,
-        pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
-        #agent_metadata=metadata_dict,
+        description=body.agent_metadata.description if body.agent_metadata else None,
+        establishment_policies=body.agent_metadata.establishment_policies if body.agent_metadata else None,
+        pre_booking_requirements=body.agent_metadata.pre_booking_requirements if body.agent_metadata else None,
+        vertical_metadata=body.vertical_metadata,
         actor_id=user.user_id,
     )
     result = await use_case.execute(command)
