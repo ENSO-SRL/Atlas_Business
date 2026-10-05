@@ -20,7 +20,15 @@ class PublicBusinessDirectoryResponse(BaseModel):
     category_id: UUID
     code: str
     name: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
+    vertical_metadata: dict[str, Any] | None
+    maps_url: str | None
+    phone: str
+    schedules: list[dict]
 
 class PaginatedPublicBusinessDirectoryResponse(BaseModel):
     items: list[PublicBusinessDirectoryResponse]

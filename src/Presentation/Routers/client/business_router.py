@@ -39,4 +39,5 @@ async def get_public_business(
     use_case = GetPublicBusinessUseCase(business_repo, agent_metadata_repo)
     command = GetPublicBusinessCommand(business_id=business_id)
     result = await use_case.execute(command)
+    #print("result", result)
     return result

@@ -1,3 +1,4 @@
+from typing import Any
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -18,7 +19,12 @@ class PublicBusinessResult:
     name: str
     category: str
     platform: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
+    vertical_metadata: dict[str, Any] | None
     maps_url: str | None
     phone: str
     schedules: list[dict]
@@ -51,13 +57,18 @@ class GetPublicBusinessUseCase:
             "establishment_policies": metadata.establishment_policies if metadata else [],
             "pre_booking_requirements": metadata.pre_booking_requirements if metadata else [],
         }
-
+        #print("vertical_metadata 2", business.vertical_metadata)
         return PublicBusinessResult(
             id=business.id,
             name=business.name,
             category=business.category_name,
             platform=business.platform.value,
-            address=business.address,
+            province=business.province,
+            municipality=business.municipality,
+            neighborhood=business.neighborhood,
+            street_address=business.street_address,
+            reference=business.reference,
+            vertical_metadata=business.vertical_metadata,
             maps_url=business.maps_url,
             phone=business.phone,
             schedules=business.schedules,

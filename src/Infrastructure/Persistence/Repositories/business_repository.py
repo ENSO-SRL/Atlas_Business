@@ -22,6 +22,7 @@ class BusinessRepository(BaseRepository, IBusinessRepository):
     @staticmethod
     def _to_entity(model: BusinessModel) -> Business:
         # Convertir la lista de dicts JSONB a objetos BusinessSchedule
+        #print("vertical_metadata", model.vertical_metadata)
         schedules = [
             BusinessSchedule(
                 weekday=Weekday(s["weekday"]),

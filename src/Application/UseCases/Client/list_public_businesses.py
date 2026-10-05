@@ -17,7 +17,11 @@ class PublicBusinessResult:
     category_id: UUID
     code: str
     name: str
-    address: str
+    province: str
+    municipality: str
+    neighborhood: str
+    street_address: str
+    reference: str | None
 
 
 class ListPublicBusinessesUseCase:
@@ -37,7 +41,11 @@ class ListPublicBusinessesUseCase:
                 category_id=i.category_id,
                 code=i.code,
                 name=i.name,
-                address=i.address,
+                province=i.province,
+                municipality=i.municipality,
+                neighborhood=i.neighborhood,
+                street_address=i.street_address,
+                reference=i.reference,
             )
             for i in items
         ]

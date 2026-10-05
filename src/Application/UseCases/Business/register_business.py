@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
-from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError, BusinessCategoryNotFoundError, VerticalMetadataValidationError
+from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError, BusinessCategoryNotFoundError, VerticalMetadataValidationError, InvalidScheduleError
 from src.Domain.Entities.agent_metadata import AgentMetadata
 from src.Domain.Entities.business import Business
 from src.Domain.Entities.business_user import BusinessUser
@@ -140,14 +140,18 @@ class RegisterBusinessUseCase:
         except AttributeError:
             business_id = uuid.uuid4()
 
-        schedules = [
-            BusinessSchedule(
-                weekday=Weekday(s.weekday),
-                opening_time=s.opening_time,
-                closing_time=s.closing_time,
-            )
-            for s in command.schedules
-        ]
+        schedules = []
+        try:
+            for s in command.schedules:
+                schedules.append(
+                    BusinessSchedule(
+                        weekday=Weekday(s.weekday),
+                        opening_time=s.opening_time,
+                        closing_time=s.closing_time,
+                    )
+                )
+        except ValueError as e:
+            raise InvalidScheduleError(str(e))
         
         business = Business(
             id=business_id,

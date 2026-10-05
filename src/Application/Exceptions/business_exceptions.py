@@ -13,6 +13,11 @@ class BusinessCodeAlreadyExistsError(ApplicationError):
         super().__init__(f"El código de negocio '{code}' ya está en uso.")
 
 
+class InvalidScheduleError(ApplicationError):
+    def __init__(self, detail: str):
+        super().__init__(f"Horario inválido: {detail}")
+
+
 class BusinessNotFoundError(ApplicationError):
     def __init__(self):
         super().__init__("El negocio no fue encontrado.")

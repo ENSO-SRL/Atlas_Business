@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from typing import Any
-from src.Application.Exceptions.business_exceptions import BusinessNotFoundError, VerticalMetadataValidationError
+from src.Application.Exceptions.business_exceptions import BusinessNotFoundError, VerticalMetadataValidationError, InvalidScheduleError
 from src.Application.UseCases.Business.get_my_business import BusinessProfileResult, GetMyBusinessCommand, GetMyBusinessUseCase
 from src.Application.UseCases.Business.register_business import ScheduleInput
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
@@ -89,11 +89,19 @@ class UpdateBusinessUseCase:
             business.aliases = command.aliases
             business_changed = True
         if command.schedules is not None:
-            business.schedules = [
-                {"weekday": s.weekday, "opening_time": s.opening_time, "closing_time": s.closing_time}
-                for s in command.schedules
-            ]
-            business_changed = True
+            try:
+                # Validar convirtiendo a Weekday para atrapar el error
+                from src.Domain.Enums.weekday import Weekday
+                for s in command.schedules:
+                    Weekday(s.weekday)
+                
+                business.schedules = [
+                    {"weekday": s.weekday, "opening_time": s.opening_time, "closing_time": s.closing_time}
+                    for s in command.schedules
+                ]
+                business_changed = True
+            except ValueError as e:
+                raise InvalidScheduleError(str(e))
             
         if command.vertical_metadata is not None:
             # Validar con la categoría actual
