@@ -71,4 +71,5 @@ class GetPublicServiceUseCase:
             allows_manual_object_selection=service.allows_manual_object_selection,
             agent_metadata=metadata_dict,
             custom_fields=public_fields,
+            vertical_metadata=service.vertical_metadata,
         )

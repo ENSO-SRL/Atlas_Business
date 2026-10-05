@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.client_exceptions import BusinessNotVerifiedError
@@ -32,6 +33,7 @@ class PublicServiceResult:
     billing_nature: str
     allows_manual_object_selection: bool
     agent_metadata: dict
+    vertical_metadata: dict[str, Any]
     custom_fields: list[PublicCustomFieldResult]
 
 
@@ -90,6 +92,7 @@ class ListPublicServicesUseCase:
                     billing_nature=s.billing_nature.value,
                     allows_manual_object_selection=s.allows_manual_object_selection,
                     agent_metadata=metadata_dict,
+                    vertical_metadata=s.vertical_metadata,
                     custom_fields=public_fields,
                 )
             )
