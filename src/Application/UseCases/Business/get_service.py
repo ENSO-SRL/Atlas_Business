@@ -31,6 +31,9 @@ class ServiceDetailResult:
     exposes_end_time: bool
     buffer_minutes: int
     grid_interval_minutes: int
+    max_booking_window_days: int
+    min_booking_window_hours: int
+    max_daily_bookings_per_user: int
     allows_manual_object_selection: bool
     auto_selection_criteria: str
     billing_nature: str
@@ -86,6 +89,9 @@ class GetServiceUseCase:
             exposes_end_time=service.exposes_end_time,
             buffer_minutes=service.buffer_minutes,
             grid_interval_minutes=service.grid_interval_minutes,
+            max_booking_window_days=service.max_booking_window_days,
+            min_booking_window_hours=service.min_booking_window_hours,
+            max_daily_bookings_per_user=service.max_daily_bookings_per_user,
             allows_manual_object_selection=service.allows_manual_object_selection,
             auto_selection_criteria=service.auto_selection_criteria.value,
             billing_nature=service.billing_nature.value,

@@ -31,6 +31,9 @@ class PublicServiceResult:
     occupation_duration_minutes: int
     exposes_end_time: bool
     billing_nature: str
+    max_booking_window_days: int
+    min_booking_window_hours: int
+    max_daily_bookings_per_user: int
     allows_manual_object_selection: bool
     agent_metadata: dict
     vertical_metadata: dict[str, Any]
@@ -90,6 +93,9 @@ class ListPublicServicesUseCase:
                     occupation_duration_minutes=s.occupation_duration_minutes,
                     exposes_end_time=s.exposes_end_time,
                     billing_nature=s.billing_nature.value,
+                    max_booking_window_days=s.max_booking_window_days,
+                    min_booking_window_hours=s.min_booking_window_hours,
+                    max_daily_bookings_per_user=s.max_daily_bookings_per_user,
                     allows_manual_object_selection=s.allows_manual_object_selection,
                     agent_metadata=metadata_dict,
                     vertical_metadata=s.vertical_metadata,

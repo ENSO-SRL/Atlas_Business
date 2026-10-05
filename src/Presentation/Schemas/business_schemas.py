@@ -98,6 +98,9 @@ class CreateServiceRequest(BaseModel):
     allows_manual_object_selection: bool
     auto_selection_criteria: str
     billing_nature: str
+    max_booking_window_days: int = 30
+    min_booking_window_hours: int = 2
+    max_daily_bookings_per_user: int = 1
     agent_metadata: AgentMetadataIn
     vertical_metadata: dict[str, Any] = Field(default_factory=dict)
     rates: list[RateIn] | None = None
@@ -107,6 +110,9 @@ class UpdateServiceRequest(BaseModel):
     category_id: UUID | None = None
     buffer_minutes: int | None = None
     grid_interval_minutes: int | None = None
+    max_booking_window_days: int | None = None
+    min_booking_window_hours: int | None = None
+    max_daily_bookings_per_user: int | None = None
     exposes_end_time: bool | None = None
     agent_metadata: AgentMetadataIn | None = None
     vertical_metadata: dict[str, Any] | None = None

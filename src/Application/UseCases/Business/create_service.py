@@ -38,6 +38,9 @@ class CreateServiceCommand:
     establishment_policies: list[str]
     pre_booking_requirements: list[str]
     vertical_metadata: dict[str, Any]
+    max_booking_window_days: int
+    min_booking_window_hours: int
+    max_daily_bookings_per_user: int
     rates: list[RateInput] | None = None
 
 
@@ -135,6 +138,9 @@ class CreateServiceUseCase:
             publication_status=initial_status,
             created_by=command.actor_id,
             vertical_metadata=command.vertical_metadata,
+            max_booking_window_days=command.max_booking_window_days,
+            min_booking_window_hours=command.min_booking_window_hours,
+            max_daily_bookings_per_user=command.max_daily_bookings_per_user,
         )
         
         await self.service_repo.create(service)

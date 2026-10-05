@@ -41,6 +41,9 @@ class Service:
     created_by: UUID | None = None
     updated_at: datetime | None = None
     updated_by: UUID | None = None
+    max_booking_window_days: int = 30
+    min_booking_window_hours: int = 2
+    max_daily_bookings_per_user: int = 1
     vertical_metadata: dict[str, Any] | None = None
     created_at: datetime | None = None
 
@@ -56,6 +59,15 @@ class Service:
             
         if self.grid_interval_minutes < 1:
             raise ValueError("grid_interval_minutes debe ser mayor o igual a 1.")
+
+        if self.max_booking_window_days < 1:
+            raise ValueError("max_booking_window_days debe ser al menos 1.")
+
+        if self.min_booking_window_hours < 0:
+            raise ValueError("min_booking_window_hours no puede ser negativo.")
+
+        if self.max_daily_bookings_per_user < 1:
+            raise ValueError("max_daily_bookings_per_user debe ser al menos 1.")
 
     def is_bookable(self) -> bool:
         """

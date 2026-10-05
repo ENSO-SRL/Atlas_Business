@@ -30,6 +30,9 @@ class UpdateServiceCommand:
     # Campos operativos (precio/capacidad): NO pasan por el filtro
     buffer_minutes: int | None = None
     grid_interval_minutes: int | None = None
+    max_booking_window_days: int | None = None
+    min_booking_window_hours: int | None = None
+    max_daily_bookings_per_user: int | None = None
     exposes_end_time: bool | None = None
     vertical_metadata: dict[str, Any] | None = None
 
@@ -95,6 +98,12 @@ class UpdateServiceUseCase:
             payload["buffer_minutes"] = command.buffer_minutes
         if command.grid_interval_minutes is not None and command.grid_interval_minutes != service.grid_interval_minutes:
             payload["grid_interval_minutes"] = command.grid_interval_minutes
+        if command.max_booking_window_days is not None and command.max_booking_window_days != service.max_booking_window_days:
+            payload["max_booking_window_days"] = command.max_booking_window_days
+        if command.min_booking_window_hours is not None and command.min_booking_window_hours != service.min_booking_window_hours:
+            payload["min_booking_window_hours"] = command.min_booking_window_hours
+        if command.max_daily_bookings_per_user is not None and command.max_daily_bookings_per_user != service.max_daily_bookings_per_user:
+            payload["max_daily_bookings_per_user"] = command.max_daily_bookings_per_user
         if command.exposes_end_time is not None and command.exposes_end_time != service.exposes_end_time:
             payload["exposes_end_time"] = command.exposes_end_time
         if command.vertical_metadata is not None and command.vertical_metadata != service.vertical_metadata:
