@@ -28,6 +28,7 @@ class BookableObjectRepository(BaseRepository, IBookableObjectRepository):
             created_by=model.created_by,
             updated_at=model.updated_at,
             updated_by=model.updated_by,
+            vertical_metadata=model.vertical_metadata or {},
         )
 
     async def list_by_service(self, service_id: UUID) -> list[BookableObject]:
@@ -56,6 +57,7 @@ class BookableObjectRepository(BaseRepository, IBookableObjectRepository):
             min_capacity=entity.min_capacity,
             max_capacity=entity.max_capacity,
             is_active=entity.is_active,
+            vertical_metadata=entity.vertical_metadata,
             created_at=entity.created_at,
             created_by=entity.created_by,
         )
@@ -72,6 +74,7 @@ class BookableObjectRepository(BaseRepository, IBookableObjectRepository):
                 min_capacity=entity.min_capacity,
                 max_capacity=entity.max_capacity,
                 is_active=entity.is_active,
+                vertical_metadata=entity.vertical_metadata,
                 updated_at=entity.updated_at,
                 updated_by=entity.updated_by,
             )

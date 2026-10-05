@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import ServiceNotFoundError
@@ -19,6 +20,7 @@ class BookableObjectResult:
     min_capacity: int
     max_capacity: int
     is_active: bool
+    vertical_metadata: dict[str, Any]
 
 
 class ListBookableObjectsUseCase:
@@ -44,6 +46,7 @@ class ListBookableObjectsUseCase:
                 min_capacity=o.min_capacity,
                 max_capacity=o.max_capacity,
                 is_active=o.is_active,
+                vertical_metadata=o.vertical_metadata or {},
             )
             for o in objects
         ]

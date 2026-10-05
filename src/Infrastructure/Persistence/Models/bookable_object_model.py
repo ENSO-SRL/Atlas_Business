@@ -32,6 +32,10 @@ class BookableObjectModel(Base):
     min_capacity: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     max_capacity: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.true())
+    
+    vertical_metadata: Mapped[dict] = mapped_column(
+        sa.JSON, nullable=False, server_default=sa.text("'{}'::jsonb")
+    )
 
     # Campos de auditoría
     created_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)

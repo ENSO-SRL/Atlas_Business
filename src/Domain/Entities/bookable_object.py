@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 @dataclass
@@ -17,6 +18,7 @@ class BookableObject:
     created_by: UUID | None = None
     updated_at: datetime | None = None
     updated_by: UUID | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.min_capacity < 1:

@@ -109,12 +109,14 @@ class CreateBookableObjectRequest(BaseModel):
     name: str | None = None
     min_capacity: int
     max_capacity: int
+    vertical_metadata: dict[str, Any] = Field(default_factory=dict)
 
 class UpdateBookableObjectRequest(BaseModel):
     name: str | None = None
     min_capacity: int | None = None
     max_capacity: int | None = None
     is_active: bool | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
 # ─── Rates ───
 

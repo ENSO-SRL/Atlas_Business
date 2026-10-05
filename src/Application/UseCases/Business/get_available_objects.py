@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import ServiceNotFoundError
@@ -24,6 +25,7 @@ class AvailableObjectInfo:
     name: str | None
     min_capacity: int
     max_capacity: int
+    vertical_metadata: dict[str, Any]
 
 
 @dataclass
@@ -99,6 +101,7 @@ class GetAvailableObjectsUseCase:
                 name=obj.name,
                 min_capacity=obj.min_capacity,
                 max_capacity=obj.max_capacity,
+                vertical_metadata=obj.vertical_metadata or {},
             )
             for obj in available_objects
         ]
