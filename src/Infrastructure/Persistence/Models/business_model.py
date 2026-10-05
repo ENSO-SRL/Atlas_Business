@@ -53,6 +53,10 @@ class BusinessModel(Base):
     schedules: Mapped[list] = mapped_column(
         sa.JSON, nullable=False, server_default=sa.text("'[]'::jsonb")
     )
+    
+    vertical_metadata: Mapped[dict] = mapped_column(
+        sa.JSON, nullable=False, server_default=sa.text("'{}'::jsonb")
+    )
 
     agent_metadata_id: Mapped[UUID] = mapped_column(
         sa.UUID(as_uuid=True),

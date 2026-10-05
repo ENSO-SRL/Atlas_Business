@@ -3,6 +3,11 @@ class ApplicationError(Exception):
     pass
 
 
+class VerticalMetadataValidationError(ApplicationError):
+    def __init__(self, message: str):
+        super().__init__(f"Error en metadatos verticales: {message}")
+
+
 class BusinessCodeAlreadyExistsError(ApplicationError):
     def __init__(self, code: str):
         super().__init__(f"El código de negocio '{code}' ya está en uso.")

@@ -13,6 +13,7 @@ from src.Application.Exceptions.business_exceptions import (
     BusinessCategoryNotFoundError,
     ServiceCategoryNotFoundError,
     InvalidRncError,
+    VerticalMetadataValidationError,
 )
 
 from src.Application.Exceptions.client_exceptions import (
@@ -80,6 +81,10 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(BookingNotFoundError)
     async def booking_not_found_handler(request: Request, exc: BookingNotFoundError):
         return JSONResponse(status_code=404, content={"error": "BOOKING_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(VerticalMetadataValidationError)
+    async def vertical_metadata_validation_handler(request: Request, exc: VerticalMetadataValidationError):
+        return JSONResponse(status_code=400, content={"error": "VERTICAL_METADATA_INVALID", "detail": str(exc)})
 
     # Infra Exceptions
     

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from src.Application.UseCases.Business.get_my_business import GetMyBusinessCommand, GetMyBusinessUseCase
 from src.Application.UseCases.Business.list_my_businesses import ListMyBusinessesCommand, ListMyBusinessesUseCase
 from src.Application.UseCases.Business.register_business import RegisterBusinessCommand, RegisterBusinessUseCase
-from src.Application.UseCases.Business.update_business import UpdateBusinessCommand, UpdateBusinessUseCase
+from src.Application.UseCases.Business.update_business import UpdateBusinessCommand, UpdateBusinessUseCase, AgentMetadataInput
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
@@ -64,6 +64,7 @@ async def register_business(
         description=body.description,
         establishment_policies=body.establishment_policies,
         pre_booking_requirements=body.pre_booking_requirements,
+        vertical_metadata=body.vertical_metadata,
     )
     result = await use_case.execute(command)
     return result
@@ -90,13 +91,13 @@ async def update_my_business(
 ):
     use_case = UpdateBusinessUseCase(business_repo, agent_metadata_repo)
     
-    metadata_dict = None
+    metadata_input = None
     if body.agent_metadata:
-        metadata_dict = {
-            "description": body.agent_metadata.description,
-            "establishment_policies": body.agent_metadata.establishment_policies,
-            "pre_booking_requirements": body.agent_metadata.pre_booking_requirements,
-        }
+        metadata_input = AgentMetadataInput(
+            description=body.agent_metadata.description,
+            establishment_policies=body.agent_metadata.establishment_policies,
+            pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
+        )
         
     command = UpdateBusinessCommand(
         business_id=user.business_id,
@@ -105,8 +106,10 @@ async def update_my_business(
         address=body.address,
         maps_url=body.maps_url,
         aliases=body.aliases,
-        schedules=[asdict(s) for s in body.schedules] if body.schedules is not None else None,
-        agent_metadata=metadata_dict,
+        schedules=[ScheduleInput(**asdict(s)) for s in body.schedules] if body.schedules is not None else None,
+        agent_metadata=metadata_input,
+        vertical_metadata=body.vertical_metadata,
+        actor_id=user.user_id,
     )
     result = await use_case.execute(command)
     return result

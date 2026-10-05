@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, time
+from typing import Any
 from uuid import UUID
 
 from src.Domain.Enums.platform import Platform
@@ -38,6 +39,7 @@ class Business:
     category_name: str | None = None
     aliases: list[str] = field(default_factory=list)
     schedules: list[BusinessSchedule] = field(default_factory=list)
+    vertical_metadata: dict[str, Any] = field(default_factory=dict)
     maps_url: str | None = None
     created_at: datetime | None = None
     created_by: UUID | None = None

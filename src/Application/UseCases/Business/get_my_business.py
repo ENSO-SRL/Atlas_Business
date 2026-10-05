@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from src.Application.Exceptions.business_exceptions import BusinessNotFoundError
@@ -25,6 +26,7 @@ class BusinessProfileResult:
     aliases: list[str]
     schedules: list[dict]
     agent_metadata: dict
+    vertical_metadata: dict[str, Any]
     created_at: str | None
 
 
@@ -69,5 +71,6 @@ class GetMyBusinessUseCase:
             aliases=business.aliases,
             schedules=business.schedules,
             agent_metadata=metadata_dict,
+            vertical_metadata=business.vertical_metadata,
             created_at=created_at_str,
         )

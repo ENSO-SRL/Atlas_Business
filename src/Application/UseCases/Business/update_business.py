@@ -2,11 +2,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
-from src.Application.Exceptions.business_exceptions import BusinessNotFoundError
+from typing import Any
+from src.Application.Exceptions.business_exceptions import BusinessNotFoundError, VerticalMetadataValidationError
 from src.Application.UseCases.Business.get_my_business import BusinessProfileResult, GetMyBusinessCommand, GetMyBusinessUseCase
 from src.Application.UseCases.Business.register_business import ScheduleInput
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
+from src.Domain.Services.vertical_validator_registry import VerticalValidatorRegistry
 
 
 @dataclass
@@ -27,6 +29,7 @@ class UpdateBusinessCommand:
     aliases: list[str] | None = None
     schedules: list[ScheduleInput] | None = None
     agent_metadata: AgentMetadataInput | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
 
 class UpdateBusinessUseCase:
@@ -42,6 +45,7 @@ class UpdateBusinessUseCase:
         self.business_repo = business_repo
         self.agent_metadata_repo = agent_metadata_repo
         self.get_use_case = GetMyBusinessUseCase(business_repo, agent_metadata_repo)
+        self.vertical_registry = VerticalValidatorRegistry()
 
     async def execute(self, command: UpdateBusinessCommand) -> BusinessProfileResult:
         business = await self.business_repo.get_by_id(command.business_id)
@@ -73,6 +77,15 @@ class UpdateBusinessUseCase:
                 {"weekday": s.weekday, "opening_time": s.opening_time, "closing_time": s.closing_time}
                 for s in command.schedules
             ]
+            business_changed = True
+            
+        if command.vertical_metadata is not None:
+            # Validar con la categoría actual
+            validator = self.vertical_registry.get_validator(business.category_name)
+            is_valid, error_msg = validator.validate(command.vertical_metadata)
+            if not is_valid:
+                raise VerticalMetadataValidationError(error_msg or "Estructura inválida.")
+            business.vertical_metadata = command.vertical_metadata
             business_changed = True
 
         if business_changed:

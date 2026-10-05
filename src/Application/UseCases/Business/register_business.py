@@ -1,9 +1,10 @@
 from src.Domain.Enums.weekday import Weekday
 from src.Domain.Entities.business import BusinessSchedule
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
-from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError, BusinessCategoryNotFoundError
+from src.Application.Exceptions.business_exceptions import BusinessCodeAlreadyExistsError, InvalidRncError, BusinessCategoryNotFoundError, VerticalMetadataValidationError
 from src.Domain.Entities.agent_metadata import AgentMetadata
 from src.Domain.Entities.business import Business
 from src.Domain.Entities.business_user import BusinessUser
@@ -12,6 +13,7 @@ from src.Domain.Enums.system_role import SystemRole
 from src.Domain.Enums.verification_status import VerificationStatus
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
+from src.Domain.Services.vertical_validator_registry import VerticalValidatorRegistry
 from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_user_repository import IBusinessUserRepository
 from src.Domain.Ports.Services.i_rnc_validation_service import IRncValidationService
@@ -46,6 +48,7 @@ class RegisterBusinessCommand:
     description: str
     establishment_policies: list[str]
     pre_booking_requirements: list[str]
+    vertical_metadata: dict[str, Any]
 
 
 @dataclass
@@ -77,6 +80,7 @@ class RegisterBusinessUseCase:
         self.rnc_service = rnc_service
         self.content_filter = content_filter
         self.business_category_repo = business_category_repo
+        self.vertical_registry = VerticalValidatorRegistry()
 
     async def execute(self, command: RegisterBusinessCommand) -> RegisterBusinessResult:
         # 1. Verificar unicidad de código
@@ -93,6 +97,12 @@ class RegisterBusinessUseCase:
         category = await self.business_category_repo.get_by_id(command.category_id)
         if not category or not category.is_active:
             raise BusinessCategoryNotFoundError()
+
+        # 4. Validar vertical_metadata
+        validator = self.vertical_registry.get_validator(category.name)
+        is_valid, error_msg = validator.validate(command.vertical_metadata)
+        if not is_valid:
+            raise VerticalMetadataValidationError(error_msg or "Estructura inválida.")
 
         # 2. Crear AgentMetadata
         try:
@@ -148,6 +158,7 @@ class RegisterBusinessUseCase:
             phone=command.phone,
             aliases=command.aliases,
             schedules=schedules,
+            vertical_metadata=command.vertical_metadata,
             agent_metadata_id=metadata_id,
         )
         await self.business_repo.create(business)

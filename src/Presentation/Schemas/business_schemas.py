@@ -30,6 +30,7 @@ class RegisterBusinessRequest(BaseModel):
     description: str
     establishment_policies: list[str] = []
     pre_booking_requirements: list[str] = []
+    vertical_metadata: dict[str, Any] = Field(default_factory=dict)
 
 class UpdateBusinessRequest(BaseModel):
     name: str | None = None
@@ -39,6 +40,7 @@ class UpdateBusinessRequest(BaseModel):
     aliases: list[str] | None = None
     schedules: list[ScheduleIn] | None = None
     agent_metadata: AgentMetadataIn | None = None
+    vertical_metadata: dict[str, Any] | None = None
 
 # ─── Bookings ───
 
