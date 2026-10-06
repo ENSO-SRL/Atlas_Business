@@ -87,6 +87,26 @@ class UpdateUserRequest(BaseModel):
 
 # ─── Services ───
 
+class PaymentSplitIn(BaseModel):
+    stage: str
+    percentage: float
+    allowed_methods: list[str]
+
+class PaymentAndCancellationPolicyIn(BaseModel):
+    payment_splits: list[PaymentSplitIn]
+    cancellation_description: str | None = None
+    min_cancellation_margin_hours: int | None = None
+    cancellation_fee: float | None = None
+
+class ModificationPolicyIn(BaseModel):
+    allows_same_day_reschedule: bool | None = None
+    allows_date_change: bool | None = None
+    date_change_margin_days: int | None = None
+
+class ArrivalAndConfirmationPolicyIn(BaseModel):
+    wait_time_minutes: int | None = None
+    release_automatically: bool | None = None
+
 class CreateServiceRequest(BaseModel):
     name: str
     category_id: UUID
@@ -103,6 +123,9 @@ class CreateServiceRequest(BaseModel):
     max_daily_bookings_per_user: int = 1
     agent_metadata: AgentMetadataIn
     vertical_metadata: dict[str, Any] = Field(default_factory=dict)
+    payment_cancellation_policy: PaymentAndCancellationPolicyIn | None = None
+    modification_policy: ModificationPolicyIn | None = None
+    arrival_confirmation_policy: ArrivalAndConfirmationPolicyIn | None = None
     rates: list[RateIn] | None = None
 
 class UpdateServiceRequest(BaseModel):
@@ -116,6 +139,9 @@ class UpdateServiceRequest(BaseModel):
     exposes_end_time: bool | None = None
     agent_metadata: AgentMetadataIn | None = None
     vertical_metadata: dict[str, Any] | None = None
+    payment_cancellation_policy: PaymentAndCancellationPolicyIn | None = None
+    modification_policy: ModificationPolicyIn | None = None
+    arrival_confirmation_policy: ArrivalAndConfirmationPolicyIn | None = None
 
 # ─── Bookable Objects ───
 

@@ -38,6 +38,9 @@ class PublicServiceResult:
     agent_metadata: dict
     vertical_metadata: dict[str, Any]
     custom_fields: list[PublicCustomFieldResult]
+    payment_cancellation_policy: dict[str, Any] | None
+    modification_policy: dict[str, Any] | None
+    arrival_confirmation_policy: dict[str, Any] | None
 
 
 class ListPublicServicesUseCase:
@@ -86,6 +89,37 @@ class ListPublicServicesUseCase:
                 if cf.visible_to_client
             ]
 
+            pol_payment = None
+            if s.payment_cancellation_policy:
+                pol_payment = {
+                    "payment_splits": [
+                        {
+                            "stage": sp.stage.value,
+                            "percentage": sp.percentage,
+                            "allowed_methods": [m.value for m in sp.allowed_methods],
+                        }
+                        for sp in s.payment_cancellation_policy.payment_splits
+                    ],
+                    "cancellation_description": s.payment_cancellation_policy.cancellation_description,
+                    "min_cancellation_margin_hours": s.payment_cancellation_policy.min_cancellation_margin_hours,
+                    "cancellation_fee": float(s.payment_cancellation_policy.cancellation_fee) if s.payment_cancellation_policy.cancellation_fee is not None else None,
+                }
+
+            pol_mod = None
+            if s.modification_policy:
+                pol_mod = {
+                    "allows_same_day_reschedule": s.modification_policy.allows_same_day_reschedule,
+                    "allows_date_change": s.modification_policy.allows_date_change,
+                    "date_change_margin_days": s.modification_policy.date_change_margin_days,
+                }
+
+            pol_arr = None
+            if s.arrival_confirmation_policy:
+                pol_arr = {
+                    "wait_time_minutes": s.arrival_confirmation_policy.wait_time_minutes,
+                    "release_automatically": s.arrival_confirmation_policy.release_automatically,
+                }
+
             result_list.append(
                 PublicServiceResult(
                     id=s.id,
@@ -100,6 +134,9 @@ class ListPublicServicesUseCase:
                     agent_metadata=metadata_dict,
                     vertical_metadata=s.vertical_metadata,
                     custom_fields=public_fields,
+                    payment_cancellation_policy=pol_payment,
+                    modification_policy=pol_mod,
+                    arrival_confirmation_policy=pol_arr,
                 )
             )
 

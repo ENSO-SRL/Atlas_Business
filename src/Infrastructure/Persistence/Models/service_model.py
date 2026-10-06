@@ -84,6 +84,21 @@ class ServiceModel(Base):
         sa.JSON, nullable=False, server_default=sa.text("'{}'::jsonb")
     )
 
+    # Políticas de Servicio (Payment & Cancellation)
+    payment_splits: Mapped[list[dict] | None] = mapped_column(sa.dialects.postgresql.JSONB, nullable=True)
+    cancellation_description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    min_cancellation_margin_hours: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    cancellation_fee: Mapped[float | None] = mapped_column(sa.Numeric(10, 2), nullable=True)
+
+    # Políticas de Servicio (Modification)
+    allows_same_day_reschedule: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
+    allows_date_change: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
+    date_change_margin_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+
+    # Políticas de Servicio (Arrival)
+    wait_time_minutes: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    release_automatically: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
+
     # Campos de auditoría
     created_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)
     created_by: Mapped[UUID | None] = mapped_column(sa.UUID(as_uuid=True), nullable=True)

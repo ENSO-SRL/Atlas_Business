@@ -35,6 +35,9 @@ class UpdateServiceCommand:
     max_daily_bookings_per_user: int | None = None
     exposes_end_time: bool | None = None
     vertical_metadata: dict[str, Any] | None = None
+    payment_cancellation_policy: dict[str, Any] | None = None
+    modification_policy: dict[str, Any] | None = None
+    arrival_confirmation_policy: dict[str, Any] | None = None
 
 
 @dataclass
@@ -108,6 +111,13 @@ class UpdateServiceUseCase:
             payload["exposes_end_time"] = command.exposes_end_time
         if command.vertical_metadata is not None and command.vertical_metadata != service.vertical_metadata:
             payload["vertical_metadata"] = command.vertical_metadata
+        if command.payment_cancellation_policy is not None:
+            # En la vida real haríamos un dict_factory, pero por simplicidad de JSON serialize:
+            payload["payment_cancellation_policy"] = command.payment_cancellation_policy
+        if command.modification_policy is not None:
+            payload["modification_policy"] = command.modification_policy
+        if command.arrival_confirmation_policy is not None:
+            payload["arrival_confirmation_policy"] = command.arrival_confirmation_policy
 
         metadata = await self.agent_metadata_repo.get_by_id(service.agent_metadata_id)
         
@@ -152,6 +162,37 @@ class UpdateServiceUseCase:
             if "grid_interval_minutes" in payload: service.grid_interval_minutes = payload["grid_interval_minutes"]
             if "exposes_end_time" in payload: service.exposes_end_time = payload["exposes_end_time"]
             if "vertical_metadata" in payload: service.vertical_metadata = payload["vertical_metadata"]
+            if "payment_cancellation_policy" in payload:
+                from src.Domain.Entities.service_policies import PaymentAndCancellationPolicy, PaymentSplit, PaymentStage, PaymentMethod
+                pol_dict = payload["payment_cancellation_policy"]
+                splits = []
+                for s in pol_dict.get("payment_splits", []):
+                    splits.append(PaymentSplit(
+                        stage=PaymentStage(s["stage"]),
+                        percentage=s["percentage"],
+                        allowed_methods=[PaymentMethod(m) for m in s.get("allowed_methods", [])]
+                    ))
+                service.payment_cancellation_policy = PaymentAndCancellationPolicy(
+                    payment_splits=splits,
+                    cancellation_description=pol_dict.get("cancellation_description"),
+                    min_cancellation_margin_hours=pol_dict.get("min_cancellation_margin_hours"),
+                    cancellation_fee=pol_dict.get("cancellation_fee"),
+                )
+            if "modification_policy" in payload:
+                from src.Domain.Entities.service_policies import ModificationPolicy
+                mod_dict = payload["modification_policy"]
+                service.modification_policy = ModificationPolicy(
+                    allows_same_day_reschedule=mod_dict.get("allows_same_day_reschedule"),
+                    allows_date_change=mod_dict.get("allows_date_change"),
+                    date_change_margin_days=mod_dict.get("date_change_margin_days"),
+                )
+            if "arrival_confirmation_policy" in payload:
+                from src.Domain.Entities.service_policies import ArrivalAndConfirmationPolicy
+                arr_dict = payload["arrival_confirmation_policy"]
+                service.arrival_confirmation_policy = ArrivalAndConfirmationPolicy(
+                    wait_time_minutes=arr_dict.get("wait_time_minutes"),
+                    release_automatically=arr_dict.get("release_automatically"),
+                )
             
             if metadata:
                 if "description" in payload: metadata.description = payload["description"]

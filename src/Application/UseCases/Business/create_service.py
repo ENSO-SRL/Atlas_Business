@@ -9,6 +9,14 @@ from src.Domain.Enums.auto_selection import AutoSelectionCriteria
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.duration_nature import DurationNature
 from src.Domain.Enums.publication_status import PublicationStatus
+from src.Domain.Entities.service_policies import (
+    ArrivalAndConfirmationPolicy,
+    ModificationPolicy,
+    PaymentAndCancellationPolicy,
+    PaymentMethod,
+    PaymentSplit,
+    PaymentStage,
+)
 from src.Domain.Ports.Repositories.i_agent_metadata_repository import IAgentMetadataRepository
 from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
@@ -41,6 +49,9 @@ class CreateServiceCommand:
     max_booking_window_days: int
     min_booking_window_hours: int
     max_daily_bookings_per_user: int
+    payment_cancellation_policy: dict[str, Any] | None = None
+    modification_policy: dict[str, Any] | None = None
+    arrival_confirmation_policy: dict[str, Any] | None = None
     rates: list[RateInput] | None = None
 
 
@@ -142,6 +153,38 @@ class CreateServiceUseCase:
             min_booking_window_hours=command.min_booking_window_hours,
             max_daily_bookings_per_user=command.max_daily_bookings_per_user,
         )
+
+        if command.payment_cancellation_policy:
+            pol_dict = command.payment_cancellation_policy
+            splits = []
+            for s in pol_dict.get("payment_splits", []):
+                splits.append(PaymentSplit(
+                    stage=PaymentStage(s["stage"]),
+                    percentage=s["percentage"],
+                    allowed_methods=[PaymentMethod(m) for m in s.get("allowed_methods", [])]
+                ))
+            service.payment_cancellation_policy = PaymentAndCancellationPolicy(
+                payment_splits=splits,
+                cancellation_description=pol_dict.get("cancellation_description"),
+                min_cancellation_margin_hours=pol_dict.get("min_cancellation_margin_hours"),
+                cancellation_fee=pol_dict.get("cancellation_fee"),
+            )
+
+        if command.modification_policy:
+            mod_dict = command.modification_policy
+            service.modification_policy = ModificationPolicy(
+                allows_same_day_reschedule=mod_dict.get("allows_same_day_reschedule"),
+                allows_date_change=mod_dict.get("allows_date_change"),
+                date_change_margin_days=mod_dict.get("date_change_margin_days"),
+            )
+
+        if command.arrival_confirmation_policy:
+            arr_dict = command.arrival_confirmation_policy
+            service.arrival_confirmation_policy = ArrivalAndConfirmationPolicy(
+                wait_time_minutes=arr_dict.get("wait_time_minutes"),
+                release_automatically=arr_dict.get("release_automatically"),
+            )
+
         
         await self.service_repo.create(service)
 

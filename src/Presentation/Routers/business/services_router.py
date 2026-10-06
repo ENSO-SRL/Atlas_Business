@@ -7,6 +7,7 @@ from uuid import UUID
 from src.Application.UseCases.Business.create_service import CreateServiceCommand, CreateServiceUseCase
 from src.Application.UseCases.Business.list_services import ListServicesCommand, ListServicesUseCase
 from src.Application.UseCases.Business.get_service import GetServiceCommand, GetServiceUseCase
+from src.Application.UseCases.Business.get_service_policies import GetServicePoliciesCommand, GetServicePoliciesUseCase
 from src.Application.UseCases.Business.update_service import UpdateServiceCommand, UpdateServiceUseCase
 
 from src.Application.UseCases.Business.create_bookable_object import CreateBookableObjectCommand, CreateBookableObjectUseCase
@@ -119,6 +120,9 @@ async def create_service(
         establishment_policies=body.agent_metadata.establishment_policies,
         pre_booking_requirements=body.agent_metadata.pre_booking_requirements,
         vertical_metadata=body.vertical_metadata,
+        payment_cancellation_policy=body.payment_cancellation_policy.model_dump() if body.payment_cancellation_policy else None,
+        modification_policy=body.modification_policy.model_dump() if body.modification_policy else None,
+        arrival_confirmation_policy=body.arrival_confirmation_policy.model_dump() if body.arrival_confirmation_policy else None,
         rates=mapped_rates,
         actor_id=user.user_id,
     )
@@ -136,6 +140,18 @@ async def get_service(
 ):
     use_case = GetServiceUseCase(service_repo, agent_metadata_repo, content_req_repo)
     command = GetServiceCommand(business_id=user.business_id, service_id=service_id)
+    result = await use_case.execute(command)
+    return result
+
+
+@router.get("/{service_id}/policies")
+async def get_service_policies(
+    service_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    service_repo: IServiceRepository = Depends(get_service_repo),
+):
+    use_case = GetServicePoliciesUseCase(service_repo)
+    command = GetServicePoliciesCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return result
 
@@ -176,6 +192,9 @@ async def update_service(
         establishment_policies=body.agent_metadata.establishment_policies if body.agent_metadata else None,
         pre_booking_requirements=body.agent_metadata.pre_booking_requirements if body.agent_metadata else None,
         vertical_metadata=body.vertical_metadata,
+        payment_cancellation_policy=body.payment_cancellation_policy.model_dump() if body.payment_cancellation_policy else None,
+        modification_policy=body.modification_policy.model_dump() if body.modification_policy else None,
+        arrival_confirmation_policy=body.arrival_confirmation_policy.model_dump() if body.arrival_confirmation_policy else None,
         actor_id=user.user_id,
     )
     result = await use_case.execute(command)

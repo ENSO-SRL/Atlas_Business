@@ -5,6 +5,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Domain.Entities.service import Service, DurationNature, BillingNature, AutoSelectionCriteria
+from src.Domain.Entities.service_policies import (
+    ArrivalAndConfirmationPolicy,
+    ModificationPolicy,
+    PaymentAndCancellationPolicy,
+    PaymentMethod,
+    PaymentSplit,
+    PaymentStage,
+)
 from src.Domain.Enums.publication_status import PublicationStatus
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Infrastructure.Persistence.Models.service_model import ServiceModel
@@ -18,7 +26,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
 
     @staticmethod
     def _to_entity(model: ServiceModel) -> Service:
-        return Service(
+        svc = Service(
             id=model.id,
             business_id=model.business_id,
             name=model.name,
@@ -43,6 +51,36 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             updated_by=model.updated_by,
             vertical_metadata=model.vertical_metadata or {},
         )
+
+        if model.payment_splits is not None or model.cancellation_description is not None:
+            splits = []
+            for s in (model.payment_splits or []):
+                splits.append(PaymentSplit(
+                    stage=PaymentStage(s["stage"]),
+                    percentage=s["percentage"],
+                    allowed_methods=[PaymentMethod(m) for m in s.get("allowed_methods", [])]
+                ))
+            svc.payment_cancellation_policy = PaymentAndCancellationPolicy(
+                payment_splits=splits,
+                cancellation_description=model.cancellation_description,
+                min_cancellation_margin_hours=model.min_cancellation_margin_hours,
+                cancellation_fee=float(model.cancellation_fee) if model.cancellation_fee is not None else None,
+            )
+
+        if model.allows_same_day_reschedule is not None or model.allows_date_change is not None:
+            svc.modification_policy = ModificationPolicy(
+                allows_same_day_reschedule=model.allows_same_day_reschedule,
+                allows_date_change=model.allows_date_change,
+                date_change_margin_days=model.date_change_margin_days,
+            )
+
+        if model.wait_time_minutes is not None or model.release_automatically is not None:
+            svc.arrival_confirmation_policy = ArrivalAndConfirmationPolicy(
+                wait_time_minutes=model.wait_time_minutes,
+                release_automatically=model.release_automatically,
+            )
+
+        return svc
 
     async def list_by_business(
         self, business_id: UUID, status: PublicationStatus | None = None
@@ -87,6 +125,32 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             created_at=entity.created_at,
             created_by=entity.created_by,
         )
+
+        if entity.payment_cancellation_policy:
+            pol = entity.payment_cancellation_policy
+            model.payment_splits = [
+                {
+                    "stage": s.stage.value,
+                    "percentage": s.percentage,
+                    "allowed_methods": [m.value for m in s.allowed_methods],
+                }
+                for s in pol.payment_splits
+            ] if pol.payment_splits else None
+            model.cancellation_description = pol.cancellation_description
+            model.min_cancellation_margin_hours = pol.min_cancellation_margin_hours
+            model.cancellation_fee = pol.cancellation_fee
+
+        if entity.modification_policy:
+            pol = entity.modification_policy
+            model.allows_same_day_reschedule = pol.allows_same_day_reschedule
+            model.allows_date_change = pol.allows_date_change
+            model.date_change_margin_days = pol.date_change_margin_days
+
+        if entity.arrival_confirmation_policy:
+            pol = entity.arrival_confirmation_policy
+            model.wait_time_minutes = pol.wait_time_minutes
+            model.release_automatically = pol.release_automatically
+
         self.session.add(model)
         await self.session.flush()
         return entity
@@ -110,5 +174,55 @@ class ServiceRepository(BaseRepository, IServiceRepository):
                 updated_by=entity.updated_by,
             )
         )
+
+        if entity.payment_cancellation_policy:
+            pol = entity.payment_cancellation_policy
+            stmt = stmt.values(
+                payment_splits=[
+                    {
+                        "stage": s.stage.value,
+                        "percentage": s.percentage,
+                        "allowed_methods": [m.value for m in s.allowed_methods],
+                    }
+                    for s in pol.payment_splits
+                ] if pol.payment_splits else None,
+                cancellation_description=pol.cancellation_description,
+                min_cancellation_margin_hours=pol.min_cancellation_margin_hours,
+                cancellation_fee=pol.cancellation_fee,
+            )
+        else:
+            stmt = stmt.values(
+                payment_splits=None,
+                cancellation_description=None,
+                min_cancellation_margin_hours=None,
+                cancellation_fee=None,
+            )
+
+        if entity.modification_policy:
+            pol = entity.modification_policy
+            stmt = stmt.values(
+                allows_same_day_reschedule=pol.allows_same_day_reschedule,
+                allows_date_change=pol.allows_date_change,
+                date_change_margin_days=pol.date_change_margin_days,
+            )
+        else:
+            stmt = stmt.values(
+                allows_same_day_reschedule=None,
+                allows_date_change=None,
+                date_change_margin_days=None,
+            )
+
+        if entity.arrival_confirmation_policy:
+            pol = entity.arrival_confirmation_policy
+            stmt = stmt.values(
+                wait_time_minutes=pol.wait_time_minutes,
+                release_automatically=pol.release_automatically,
+            )
+        else:
+            stmt = stmt.values(
+                wait_time_minutes=None,
+                release_automatically=None,
+            )
+
         await self.session.execute(stmt)
         return entity

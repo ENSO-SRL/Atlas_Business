@@ -4,6 +4,11 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
+from src.Domain.Entities.service_policies import (
+    ArrivalAndConfirmationPolicy,
+    ModificationPolicy,
+    PaymentAndCancellationPolicy,
+)
 from src.Domain.Enums.publication_status import PublicationStatus
 
 class DurationNature(Enum):
@@ -45,6 +50,9 @@ class Service:
     min_booking_window_hours: int = 2
     max_daily_bookings_per_user: int = 1
     vertical_metadata: dict[str, Any] | None = None
+    payment_cancellation_policy: PaymentAndCancellationPolicy | None = None
+    modification_policy: ModificationPolicy | None = None
+    arrival_confirmation_policy: ArrivalAndConfirmationPolicy | None = None
     created_at: datetime | None = None
 
     def __post_init__(self):

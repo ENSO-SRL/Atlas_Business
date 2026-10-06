@@ -62,6 +62,37 @@ class GetPublicServiceUseCase:
             if cf.visible_to_client
         ]
 
+        pol_payment = None
+        if service.payment_cancellation_policy:
+            pol_payment = {
+                "payment_splits": [
+                    {
+                        "stage": sp.stage.value,
+                        "percentage": sp.percentage,
+                        "allowed_methods": [m.value for m in sp.allowed_methods],
+                    }
+                    for sp in service.payment_cancellation_policy.payment_splits
+                ],
+                "cancellation_description": service.payment_cancellation_policy.cancellation_description,
+                "min_cancellation_margin_hours": service.payment_cancellation_policy.min_cancellation_margin_hours,
+                "cancellation_fee": float(service.payment_cancellation_policy.cancellation_fee) if service.payment_cancellation_policy.cancellation_fee is not None else None,
+            }
+
+        pol_mod = None
+        if service.modification_policy:
+            pol_mod = {
+                "allows_same_day_reschedule": service.modification_policy.allows_same_day_reschedule,
+                "allows_date_change": service.modification_policy.allows_date_change,
+                "date_change_margin_days": service.modification_policy.date_change_margin_days,
+            }
+
+        pol_arr = None
+        if service.arrival_confirmation_policy:
+            pol_arr = {
+                "wait_time_minutes": service.arrival_confirmation_policy.wait_time_minutes,
+                "release_automatically": service.arrival_confirmation_policy.release_automatically,
+            }
+
         return PublicServiceResult(
             id=service.id,
             name=service.name,
@@ -75,4 +106,7 @@ class GetPublicServiceUseCase:
             agent_metadata=metadata_dict,
             custom_fields=public_fields,
             vertical_metadata=service.vertical_metadata,
+            payment_cancellation_policy=pol_payment,
+            modification_policy=pol_mod,
+            arrival_confirmation_policy=pol_arr,
         )
