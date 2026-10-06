@@ -99,6 +99,11 @@ class ServiceModel(Base):
     wait_time_minutes: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     release_automatically: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
 
+    # Horarios operativos específicos del servicio
+    schedules: Mapped[list] = mapped_column(
+        sa.dialects.postgresql.JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")
+    )
+
     # Campos de auditoría
     created_at: Mapped[datetime | None] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=True)
     created_by: Mapped[UUID | None] = mapped_column(sa.UUID(as_uuid=True), nullable=True)

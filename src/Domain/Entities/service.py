@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, time
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -10,6 +10,7 @@ from src.Domain.Entities.service_policies import (
     PaymentAndCancellationPolicy,
 )
 from src.Domain.Enums.publication_status import PublicationStatus
+from src.Domain.Enums.weekday import Weekday
 
 class DurationNature(Enum):
     FIXED = "FIXED"
@@ -22,6 +23,19 @@ class BillingNature(Enum):
 
 class AutoSelectionCriteria(Enum):
     CLOSEST_MAX_CAPACITY = "CLOSEST_MAX_CAPACITY"
+
+@dataclass
+class ServiceSchedule:
+    """
+    Rango horario operativo específico para un servicio.
+    """
+    weekday: Weekday
+    opening_time: time
+    closing_time: time
+
+    def __post_init__(self):
+        if self.opening_time >= self.closing_time:
+            raise ValueError("opening_time debe ser menor a closing_time.")
 
 @dataclass
 class Service:
@@ -53,6 +67,7 @@ class Service:
     payment_cancellation_policy: PaymentAndCancellationPolicy | None = None
     modification_policy: ModificationPolicy | None = None
     arrival_confirmation_policy: ArrivalAndConfirmationPolicy | None = None
+    schedules: list[ServiceSchedule] = field(default_factory=list)
     created_at: datetime | None = None
 
     def __post_init__(self):
@@ -76,6 +91,13 @@ class Service:
 
         if self.max_daily_bookings_per_user < 1:
             raise ValueError("max_daily_bookings_per_user debe ser al menos 1.")
+
+        if len(self.schedules) > 7:
+            raise ValueError("schedules no puede tener más de 7 entradas.")
+            
+        dias = [s.weekday for s in self.schedules]
+        if len(dias) != len(set(dias)):
+            raise ValueError("schedules no puede contener días duplicados para el servicio.")
 
     def is_bookable(self) -> bool:
         """

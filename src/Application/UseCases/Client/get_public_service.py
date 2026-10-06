@@ -109,4 +109,12 @@ class GetPublicServiceUseCase:
             payment_cancellation_policy=pol_payment,
             modification_policy=pol_mod,
             arrival_confirmation_policy=pol_arr,
+            schedules=[
+                {
+                    "weekday": sc.weekday.value,
+                    "opening_time": sc.opening_time.isoformat(),
+                    "closing_time": sc.closing_time.isoformat(),
+                }
+                for sc in service.schedules
+            ] if service.schedules else [],
         )

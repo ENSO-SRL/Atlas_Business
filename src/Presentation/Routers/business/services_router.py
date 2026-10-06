@@ -8,6 +8,8 @@ from src.Application.UseCases.Business.create_service import CreateServiceComman
 from src.Application.UseCases.Business.list_services import ListServicesCommand, ListServicesUseCase
 from src.Application.UseCases.Business.get_service import GetServiceCommand, GetServiceUseCase
 from src.Application.UseCases.Business.get_service_policies import GetServicePoliciesCommand, GetServicePoliciesUseCase
+from src.Application.UseCases.Business.get_service_schedules import GetServiceSchedulesCommand, GetServiceSchedulesUseCase
+from src.Application.UseCases.Business.replace_service_schedules import ReplaceServiceSchedulesCommand, ReplaceServiceSchedulesUseCase
 from src.Application.UseCases.Business.update_service import UpdateServiceCommand, UpdateServiceUseCase
 
 from src.Application.UseCases.Business.create_bookable_object import CreateBookableObjectCommand, CreateBookableObjectUseCase
@@ -53,6 +55,7 @@ from src.Presentation.Schemas.business_schemas import (
     CreateCustomFieldRequest,
     CreateServiceRequest,
     ReplaceRatesRequest,
+    ReplaceServiceSchedulesRequest,
     UpdateBookableObjectRequest,
     UpdateServiceRequest,
 )
@@ -123,6 +126,7 @@ async def create_service(
         payment_cancellation_policy=body.payment_cancellation_policy.model_dump() if body.payment_cancellation_policy else None,
         modification_policy=body.modification_policy.model_dump() if body.modification_policy else None,
         arrival_confirmation_policy=body.arrival_confirmation_policy.model_dump() if body.arrival_confirmation_policy else None,
+        schedules=[s.model_dump() for s in body.schedules],
         rates=mapped_rates,
         actor_id=user.user_id,
     )
@@ -154,6 +158,36 @@ async def get_service_policies(
     command = GetServicePoliciesCommand(business_id=user.business_id, service_id=service_id)
     result = await use_case.execute(command)
     return result
+
+
+@router.get("/{service_id}/schedules")
+async def get_service_schedules(
+    service_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    service_repo: IServiceRepository = Depends(get_service_repo),
+):
+    use_case = GetServiceSchedulesUseCase(service_repo)
+    command = GetServiceSchedulesCommand(business_id=user.business_id, service_id=service_id)
+    result = await use_case.execute(command)
+    return {"items": result}
+
+
+@router.put("/{service_id}/schedules")
+async def replace_service_schedules(
+    service_id: UUID,
+    body: ReplaceServiceSchedulesRequest,
+    user: UserContext = Depends(require_admin),
+    service_repo: IServiceRepository = Depends(get_service_repo),
+):
+    use_case = ReplaceServiceSchedulesUseCase(service_repo)
+    command = ReplaceServiceSchedulesCommand(
+        business_id=user.business_id,
+        service_id=service_id,
+        actor_id=user.user_id,
+        schedules=[s.model_dump() for s in body.schedules],
+    )
+    await use_case.execute(command)
+    return {"message": "Service schedules replaced successfully"}
 
 
 @router.patch("/{service_id}")

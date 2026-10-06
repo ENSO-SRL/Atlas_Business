@@ -41,6 +41,7 @@ class PublicServiceResult:
     payment_cancellation_policy: dict[str, Any] | None
     modification_policy: dict[str, Any] | None
     arrival_confirmation_policy: dict[str, Any] | None
+    schedules: list[dict[str, Any]]
 
 
 class ListPublicServicesUseCase:
@@ -137,6 +138,14 @@ class ListPublicServicesUseCase:
                     payment_cancellation_policy=pol_payment,
                     modification_policy=pol_mod,
                     arrival_confirmation_policy=pol_arr,
+                    schedules=[
+                        {
+                            "weekday": sc.weekday.value,
+                            "opening_time": sc.opening_time.isoformat(),
+                            "closing_time": sc.closing_time.isoformat(),
+                        }
+                        for sc in s.schedules
+                    ] if s.schedules else [],
                 )
             )
 

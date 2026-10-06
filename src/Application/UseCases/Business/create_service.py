@@ -3,8 +3,10 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from datetime import time
 from src.Domain.Entities.agent_metadata import AgentMetadata
-from src.Domain.Entities.service import Service
+from src.Domain.Entities.service import Service, ServiceSchedule
+from src.Domain.Enums.weekday import Weekday
 from src.Domain.Enums.auto_selection import AutoSelectionCriteria
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.duration_nature import DurationNature
@@ -52,6 +54,7 @@ class CreateServiceCommand:
     payment_cancellation_policy: dict[str, Any] | None = None
     modification_policy: dict[str, Any] | None = None
     arrival_confirmation_policy: dict[str, Any] | None = None
+    schedules: list[dict[str, Any]] | None = None
     rates: list[RateInput] | None = None
 
 
@@ -185,7 +188,16 @@ class CreateServiceUseCase:
                 release_automatically=arr_dict.get("release_automatically"),
             )
 
-        
+        if command.schedules:
+            for s in command.schedules:
+                service.schedules.append(
+                    ServiceSchedule(
+                        weekday=Weekday(s["weekday"]),
+                        opening_time=time.fromisoformat(s["opening_time"]),
+                        closing_time=time.fromisoformat(s["closing_time"]),
+                    )
+                )
+
         await self.service_repo.create(service)
 
         # Crear tarifas si corresponde

@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.Domain.Entities.service import Service, DurationNature, BillingNature, AutoSelectionCriteria
+from src.Domain.Entities.service import Service, DurationNature, BillingNature, AutoSelectionCriteria, ServiceSchedule
 from src.Domain.Entities.service_policies import (
     ArrivalAndConfirmationPolicy,
     ModificationPolicy,
@@ -14,6 +14,7 @@ from src.Domain.Entities.service_policies import (
     PaymentStage,
 )
 from src.Domain.Enums.publication_status import PublicationStatus
+from src.Domain.Enums.weekday import Weekday
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Infrastructure.Persistence.Models.service_model import ServiceModel
 from src.Infrastructure.Persistence.Repositories.base_repository import BaseRepository
@@ -51,6 +52,17 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             updated_by=model.updated_by,
             vertical_metadata=model.vertical_metadata or {},
         )
+
+        from datetime import time
+        if model.schedules:
+            for s in model.schedules:
+                svc.schedules.append(
+                    ServiceSchedule(
+                        weekday=Weekday(s["weekday"]),
+                        opening_time=time.fromisoformat(s["opening_time"]),
+                        closing_time=time.fromisoformat(s["closing_time"]),
+                    )
+                )
 
         if model.payment_splits is not None or model.cancellation_description is not None:
             splits = []
@@ -122,6 +134,14 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             publication_status=entity.publication_status.value,
             rejection_reason=entity.rejection_reason,
             vertical_metadata=entity.vertical_metadata,
+            schedules=[
+                {
+                    "weekday": s.weekday.value,
+                    "opening_time": s.opening_time.isoformat(),
+                    "closing_time": s.closing_time.isoformat(),
+                }
+                for s in entity.schedules
+            ],
             created_at=entity.created_at,
             created_by=entity.created_by,
         )
@@ -170,6 +190,14 @@ class ServiceRepository(BaseRepository, IServiceRepository):
                 publication_status=entity.publication_status.value,
                 rejection_reason=entity.rejection_reason,
                 vertical_metadata=entity.vertical_metadata,
+                schedules=[
+                    {
+                        "weekday": s.weekday.value,
+                        "opening_time": s.opening_time.isoformat(),
+                        "closing_time": s.closing_time.isoformat(),
+                    }
+                    for s in entity.schedules
+                ],
                 updated_at=entity.updated_at,
                 updated_by=entity.updated_by,
             )

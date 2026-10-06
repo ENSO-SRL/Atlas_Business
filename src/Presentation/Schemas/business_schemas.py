@@ -126,7 +126,11 @@ class CreateServiceRequest(BaseModel):
     payment_cancellation_policy: PaymentAndCancellationPolicyIn | None = None
     modification_policy: ModificationPolicyIn | None = None
     arrival_confirmation_policy: ArrivalAndConfirmationPolicyIn | None = None
+    schedules: list[ScheduleIn] = Field(default_factory=list)
     rates: list[RateIn] | None = None
+
+class ReplaceServiceSchedulesRequest(BaseModel):
+    schedules: list[ScheduleIn]
 
 class UpdateServiceRequest(BaseModel):
     name: str | None = None
