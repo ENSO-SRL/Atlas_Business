@@ -121,6 +121,7 @@ class CreateServiceRequest(BaseModel):
     max_booking_window_days: int = 30
     min_booking_window_hours: int = 2
     max_daily_bookings_per_user: int = 1
+    requires_manual_approval: bool = False
     agent_metadata: AgentMetadataIn
     vertical_metadata: dict[str, Any] = Field(default_factory=dict)
     payment_cancellation_policy: PaymentAndCancellationPolicyIn | None = None
@@ -140,6 +141,7 @@ class UpdateServiceRequest(BaseModel):
     max_booking_window_days: int | None = None
     min_booking_window_hours: int | None = None
     max_daily_bookings_per_user: int | None = None
+    requires_manual_approval: bool | None = None
     exposes_end_time: bool | None = None
     agent_metadata: AgentMetadataIn | None = None
     vertical_metadata: dict[str, Any] | None = None

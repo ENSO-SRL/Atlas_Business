@@ -33,6 +33,7 @@ class UpdateServiceCommand:
     max_booking_window_days: int | None = None
     min_booking_window_hours: int | None = None
     max_daily_bookings_per_user: int | None = None
+    requires_manual_approval: bool | None = None
     exposes_end_time: bool | None = None
     vertical_metadata: dict[str, Any] | None = None
     payment_cancellation_policy: dict[str, Any] | None = None
@@ -109,6 +110,8 @@ class UpdateServiceUseCase:
             payload["max_daily_bookings_per_user"] = command.max_daily_bookings_per_user
         if command.exposes_end_time is not None and command.exposes_end_time != service.exposes_end_time:
             payload["exposes_end_time"] = command.exposes_end_time
+        if command.requires_manual_approval is not None and command.requires_manual_approval != service.requires_manual_approval:
+            payload["requires_manual_approval"] = command.requires_manual_approval
         if command.vertical_metadata is not None and command.vertical_metadata != service.vertical_metadata:
             payload["vertical_metadata"] = command.vertical_metadata
         if command.payment_cancellation_policy is not None:
@@ -161,6 +164,7 @@ class UpdateServiceUseCase:
             if "buffer_minutes" in payload: service.buffer_minutes = payload["buffer_minutes"]
             if "grid_interval_minutes" in payload: service.grid_interval_minutes = payload["grid_interval_minutes"]
             if "exposes_end_time" in payload: service.exposes_end_time = payload["exposes_end_time"]
+            if "requires_manual_approval" in payload: service.requires_manual_approval = payload["requires_manual_approval"]
             if "vertical_metadata" in payload: service.vertical_metadata = payload["vertical_metadata"]
             if "payment_cancellation_policy" in payload:
                 from src.Domain.Entities.service_policies import PaymentAndCancellationPolicy, PaymentSplit, PaymentStage, PaymentMethod

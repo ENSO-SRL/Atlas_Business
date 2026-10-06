@@ -5,6 +5,8 @@ from uuid import UUID
 from src.Application.UseCases.Business.get_booking import GetBookingCommand, GetBookingUseCase
 from src.Application.UseCases.Business.list_business_bookings import ListBusinessBookingsCommand, ListBusinessBookingsUseCase
 from src.Application.UseCases.Business.create_internal_booking import CreateInternalBookingCommand, CreateInternalBookingUseCase
+from src.Application.UseCases.Business.update_booking_status import UpdateBookingStatusCommand, UpdateBookingStatusUseCase
+from src.Domain.Enums.booking_status import BookingStatus
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
@@ -105,3 +107,56 @@ async def get_booking(
     )
     result = await use_case.execute(command)
     return result
+
+
+async def _update_status(
+    booking_id: UUID,
+    target_status: BookingStatus,
+    user: UserContext,
+    booking_repo: IBookingRepository
+):
+    use_case = UpdateBookingStatusUseCase(booking_repo)
+    command = UpdateBookingStatusCommand(
+        booking_id=booking_id,
+        business_id=user.business_id,
+        actor_id=user.user_id,
+        target_status=target_status
+    )
+    await use_case.execute(command)
+    return {"message": f"Booking {target_status.value.lower()}"}
+
+
+@router.post("/{booking_id}/approve", status_code=200)
+async def approve_booking(
+    booking_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    booking_repo: IBookingRepository = Depends(get_booking_repo),
+):
+    return await _update_status(booking_id, BookingStatus.APPROVED, user, booking_repo)
+
+
+@router.post("/{booking_id}/reject", status_code=200)
+async def reject_booking(
+    booking_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    booking_repo: IBookingRepository = Depends(get_booking_repo),
+):
+    return await _update_status(booking_id, BookingStatus.REJECTED, user, booking_repo)
+
+
+@router.post("/{booking_id}/confirm", status_code=200)
+async def confirm_booking(
+    booking_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    booking_repo: IBookingRepository = Depends(get_booking_repo),
+):
+    return await _update_status(booking_id, BookingStatus.CONFIRMED, user, booking_repo)
+
+
+@router.post("/{booking_id}/cancel", status_code=200)
+async def cancel_booking(
+    booking_id: UUID,
+    user: UserContext = Depends(get_current_user),
+    booking_repo: IBookingRepository = Depends(get_booking_repo),
+):
+    return await _update_status(booking_id, BookingStatus.CANCELLED, user, booking_repo)

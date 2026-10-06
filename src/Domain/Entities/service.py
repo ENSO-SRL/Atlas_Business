@@ -63,6 +63,7 @@ class Service:
     max_booking_window_days: int = 30
     min_booking_window_hours: int = 2
     max_daily_bookings_per_user: int = 1
+    requires_manual_approval: bool = False
     vertical_metadata: dict[str, Any] | None = None
     payment_cancellation_policy: PaymentAndCancellationPolicy | None = None
     modification_policy: ModificationPolicy | None = None

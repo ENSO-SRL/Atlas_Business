@@ -92,6 +92,8 @@ class ClientBookingRepository(BaseRepository, IClientBookingRepository):
             party_size=entity.party_size,
             calculated_amount=entity.calculated_amount,
             custom_fields=entity.custom_fields,
+            status=entity.status.value,
+            customer_id=entity.customer_id,
             created_at=entity.created_at or datetime.now(timezone.utc),
             created_by=entity.created_by,
         )

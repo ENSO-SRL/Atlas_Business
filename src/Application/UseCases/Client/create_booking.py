@@ -7,6 +7,7 @@ from uuid import UUID
 
 from src.Application.Exceptions.client_exceptions import CustomFieldValidationError, InvalidPartySizeError, ServiceNotPublicError, SlotNoLongerAvailableError, BookingWindowExceededError, MinimumBookingNoticeRequiredError, DailyBookingLimitExceededError
 from src.Domain.Entities.booking import Booking
+from src.Domain.Enums.booking_status import BookingStatus
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
@@ -39,7 +40,7 @@ class CreateBookingResult:
     party_size: int
     calculated_amount: str | None
     custom_fields: dict[str, Any]
-
+    status: str
 
 from src.Application.UseCases.Business.get_or_create_business_customer import (
     GetOrCreateBusinessCustomerCommand,
@@ -214,7 +215,7 @@ class CreateBookingUseCase:
             party_size=command.party_size,
             calculated_amount=calculated_amount,
             custom_fields=command.custom_fields,
-            #agent_notes=None,
+            status=BookingStatus.REQUESTED if service.requires_manual_approval else BookingStatus.APPROVED,
         )
 
         # Aquí si hay una violación de Exclusión GiST (race condition), 
@@ -232,6 +233,7 @@ class CreateBookingUseCase:
             party_size=command.party_size,
             calculated_amount=f"{calculated_amount:.2f}" if calculated_amount is not None else None,
             custom_fields=command.custom_fields,
+            status=booking.status.value,
         )
 
     def _find_rate(self, rates: list, slot_start: datetime, party_size: int) -> Decimal | None:

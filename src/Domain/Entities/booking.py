@@ -6,6 +6,7 @@ from uuid import UUID
 from src.Domain.Entities.service import Service
 from src.Domain.Entities.bookable_object import BookableObject
 from src.Domain.Entities.business_customer import BusinessCustomer
+from src.Domain.Enums.booking_status import BookingStatus
 
 @dataclass
 class Booking:
@@ -21,6 +22,7 @@ class Booking:
     customer_id: UUID | None = None
     calculated_amount: Decimal | None = None
     custom_fields: dict[str, Any] = field(default_factory=dict)
+    status: BookingStatus = BookingStatus.REQUESTED
     created_at: datetime | None = None
     created_by: UUID | None = None
     updated_at: datetime | None = None

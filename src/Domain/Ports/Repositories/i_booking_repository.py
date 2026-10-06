@@ -35,3 +35,8 @@ class IBookingRepository(ABC):
         page_size: int = 20,
     ) -> tuple[list[Booking], int]:
         ...
+
+    @abstractmethod
+    async def update(self, entity: Booking) -> Booking:
+        ...
+

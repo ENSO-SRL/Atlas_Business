@@ -59,6 +59,7 @@ class ServiceModel(Base):
     max_booking_window_days: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="30")
     min_booking_window_hours: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="2")
     max_daily_bookings_per_user: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="1")
+    requires_manual_approval: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.text("false"))
     allows_manual_object_selection: Mapped[bool] = mapped_column(sa.Boolean, nullable=False)
     auto_selection_criteria: Mapped[str] = mapped_column(_auto_selection_enum, nullable=False)
     billing_nature: Mapped[str] = mapped_column(_billing_nature_enum, nullable=False)

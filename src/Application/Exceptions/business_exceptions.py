@@ -3,6 +3,11 @@ class ApplicationError(Exception):
     pass
 
 
+class InvalidBookingStateTransitionError(ApplicationError):
+    def __init__(self, current, target):
+        super().__init__(f"No se puede transicionar la reserva de {current.value} a {target.value}.")
+
+
 class VerticalMetadataValidationError(ApplicationError):
     def __init__(self, message: str):
         super().__init__(f"Error en metadatos verticales: {message}")

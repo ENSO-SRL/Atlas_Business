@@ -51,6 +51,7 @@ class CreateServiceCommand:
     max_booking_window_days: int
     min_booking_window_hours: int
     max_daily_bookings_per_user: int
+    requires_manual_approval: bool
     payment_cancellation_policy: dict[str, Any] | None = None
     modification_policy: dict[str, Any] | None = None
     arrival_confirmation_policy: dict[str, Any] | None = None
@@ -155,6 +156,7 @@ class CreateServiceUseCase:
             max_booking_window_days=command.max_booking_window_days,
             min_booking_window_hours=command.min_booking_window_hours,
             max_daily_bookings_per_user=command.max_daily_bookings_per_user,
+            requires_manual_approval=command.requires_manual_approval,
         )
 
         if command.payment_cancellation_policy:

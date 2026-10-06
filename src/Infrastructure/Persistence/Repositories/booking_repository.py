@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from src.Domain.Entities.booking import Booking
+from src.Domain.Enums.booking_status import BookingStatus
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
 from src.Infrastructure.Persistence.Models.booking_model import BookingModel
 from src.Infrastructure.Persistence.Models.service_model import ServiceModel
@@ -38,6 +39,7 @@ class BookingRepository(BaseRepository, IBookingRepository):
             calculated_amount=model.calculated_amount,
             customer_id=model.customer_id,
             custom_fields=model.custom_fields or {},
+            status=BookingStatus(model.status),
             created_at=model.created_at,
             created_by=model.created_by,
             updated_at=model.updated_at,
@@ -164,3 +166,17 @@ class BookingRepository(BaseRepository, IBookingRepository):
         items = [self._to_entity(m) for m in result.unique().scalars().all()]
 
         return items, total
+
+    async def update(self, entity: Booking) -> Booking:
+        stmt = (
+            sa.update(BookingModel)
+            .where(BookingModel.id == entity.id)
+            .values(
+                status=entity.status.value,
+                updated_at=entity.updated_at,
+                updated_by=entity.updated_by,
+            )
+        )
+        await self.session.execute(stmt)
+        await self.session.flush()
+        return entity

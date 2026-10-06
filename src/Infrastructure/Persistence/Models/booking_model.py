@@ -7,6 +7,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.Infrastructure.Persistence.database import Base
 
+_booking_status_enum = sa.Enum(
+    "REQUESTED", "APPROVED", "REJECTED", "CONFIRMED", "CANCELLED",
+    name="booking_status_enum",
+    create_type=True,
+)
+
 
 class BookingModel(Base):
     """
@@ -62,6 +68,11 @@ class BookingModel(Base):
     # Dict libre con las respuestas a los CustomField del servicio. Llaves = UUID del campo.
     custom_fields: Mapped[dict] = mapped_column(
         sa.JSON, nullable=False, server_default=sa.text("'{}'::jsonb")
+    )
+    status: Mapped[str] = mapped_column(
+        _booking_status_enum,
+        nullable=False,
+        server_default="REQUESTED",
     )
 
     # Campos de auditoría

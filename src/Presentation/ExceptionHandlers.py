@@ -14,6 +14,7 @@ from src.Application.Exceptions.business_exceptions import (
     ServiceCategoryNotFoundError,
     InvalidRncError,
     VerticalMetadataValidationError,
+    InvalidBookingStateTransitionError,
 )
 
 from src.Application.Exceptions.client_exceptions import (
@@ -52,6 +53,10 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(RatesCoverageIncompleteError)
     async def rates_coverage_handler(request: Request, exc: RatesCoverageIncompleteError):
         return JSONResponse(status_code=422, content={"error": "RATES_COVERAGE_INCOMPLETE", "detail": str(exc)})
+
+    @app.exception_handler(InvalidBookingStateTransitionError)
+    async def booking_state_transition_handler(request: Request, exc: InvalidBookingStateTransitionError):
+        return JSONResponse(status_code=400, content={"error": "INVALID_BOOKING_STATE_TRANSITION", "detail": str(exc)})
 
     @app.exception_handler(CustomFieldValidationError)
     async def custom_field_validation_handler(request: Request, exc: CustomFieldValidationError):
