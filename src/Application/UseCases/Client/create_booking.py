@@ -10,6 +10,7 @@ from src.Domain.Entities.booking import Booking
 from src.Domain.Enums.billing_nature import BillingNature
 from src.Domain.Enums.calculation_basis import CalculationBasis
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
+from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
 from src.Domain.Ports.Repositories.i_client_service_repository import IClientServiceRepository
 from src.Domain.Ports.Repositories.i_custom_field_repository import ICustomFieldRepository
@@ -53,6 +54,7 @@ class CreateBookingUseCase:
     def __init__(
         self,
         client_service_repo: IClientServiceRepository,
+        business_repo: IBusinessRepository,
         bookable_object_repo: IBookableObjectRepository,
         client_booking_repo: IClientBookingRepository,
         custom_field_repo: ICustomFieldRepository,
@@ -60,6 +62,7 @@ class CreateBookingUseCase:
         get_or_create_customer_uc: GetOrCreateBusinessCustomerUseCase,
     ):
         self.client_service_repo = client_service_repo
+        self.business_repo = business_repo
         self.bookable_object_repo = bookable_object_repo
         self.client_booking_repo = client_booking_repo
         self.custom_field_repo = custom_field_repo
@@ -105,6 +108,29 @@ class CreateBookingUseCase:
         limit_time = now_utc + timedelta(hours=service.min_booking_window_hours)
         if slot_start <= limit_time:
             raise MinimumBookingNoticeRequiredError()
+
+        # Validación Extra: ¿Está dentro del horario de atención del día?
+        business = await self.business_repo.get_by_id(service.business_id)
+        weekday = command.date.strftime("%A").upper()
+        
+        if service.schedules:
+            schedule = next((s for s in service.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                raise SlotNoLongerAvailableError() # El servicio no abre este día
+            op_time = schedule.opening_time
+            cl_time = schedule.closing_time
+        else:
+            schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                raise SlotNoLongerAvailableError() # El negocio no abre este día
+            op_time = time.fromisoformat(schedule.opening_time)
+            cl_time = time.fromisoformat(schedule.closing_time)
+
+        day_start = datetime.combine(command.date, op_time).replace(tzinfo=timezone.utc)
+        day_end = datetime.combine(command.date, cl_time).replace(tzinfo=timezone.utc)
+        
+        if slot_start < day_start or slot_end > day_end:
+            raise SlotNoLongerAvailableError()
 
         # Obtener/Crear cliente antes de verificar el límite diario
         customer_cmd = GetOrCreateBusinessCustomerCommand(

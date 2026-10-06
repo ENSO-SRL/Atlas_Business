@@ -105,17 +105,28 @@ class GetServiceAvailabilityUseCase:
         # 2. Determinar horario laboral del negocio para ese día
         business = await self.business_repo.get_by_id(service.business_id)
         weekday = command.date.strftime("%A").upper()
-        print(f"weekday: {weekday}")
-        print(f"business.schedules: {[s.weekday.value for s in business.schedules]}")
-        schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
         
-        if not schedule:
-            print("No schedule found")
-            return empty_result
+        if service.schedules:
+            # Tiene horario propio
+            schedule = next((s for s in service.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                # El servicio no opera este día
+                return empty_result
+            # Convertir time de ServiceSchedule a string para compatibilidad si fuera necesario, 
+            # pero schedule.opening_time ya es datetime.time
+            op_time = schedule.opening_time
+            cl_time = schedule.closing_time
+        else:
+            # Hereda del negocio
+            schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                return empty_result
+            op_time = time.fromisoformat(schedule.opening_time)
+            cl_time = time.fromisoformat(schedule.closing_time)
 
         # Asumimos UTC para las consultas a BD por simplicidad si no hay timezone especificado
-        day_start = datetime.combine(command.date, time.fromisoformat(schedule.opening_time)).replace(tzinfo=timezone.utc)
-        day_end = datetime.combine(command.date, time.fromisoformat(schedule.closing_time)).replace(tzinfo=timezone.utc)
+        day_start = datetime.combine(command.date, op_time).replace(tzinfo=timezone.utc)
+        day_end = datetime.combine(command.date, cl_time).replace(tzinfo=timezone.utc)
         print(f"day_start: {day_start}")
         print(f"day_end: {day_end}")
 

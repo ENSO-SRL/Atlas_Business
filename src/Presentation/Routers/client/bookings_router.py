@@ -4,6 +4,7 @@ from uuid import UUID
 from src.Application.UseCases.Business.get_or_create_business_customer import GetOrCreateBusinessCustomerUseCase
 from src.Application.UseCases.Client.create_booking import CreateBookingCommand, CreateBookingUseCase
 from src.Domain.Ports.Repositories.i_bookable_object_repository import IBookableObjectRepository
+from src.Domain.Ports.Repositories.i_business_repository import IBusinessRepository
 from src.Domain.Ports.Repositories.i_business_customer_repository import IBusinessCustomerRepository
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository
 from src.Domain.Ports.Repositories.i_client_service_repository import IClientServiceRepository
@@ -13,6 +14,7 @@ from src.Domain.Ports.Services.i_external_agent_identity_service import IExterna
 from src.Presentation.Dependencies.auth import require_api_key
 from src.Presentation.Dependencies.repositories import (
     get_bookable_object_repo,
+    get_business_repo,
     get_business_customer_repo,
     get_client_booking_repo,
     get_client_service_repo,
@@ -30,6 +32,7 @@ async def create_booking(
     service_id: UUID,
     body: CreateBookingRequest,
     service_repo: IClientServiceRepository = Depends(get_client_service_repo),
+    business_repo: IBusinessRepository = Depends(get_business_repo),
     rate_repo: IServiceRateRepository = Depends(get_service_rate_repo),
     object_repo: IBookableObjectRepository = Depends(get_bookable_object_repo),
     booking_repo: IClientBookingRepository = Depends(get_client_booking_repo),
@@ -40,6 +43,7 @@ async def create_booking(
     customer_uc = GetOrCreateBusinessCustomerUseCase(customer_repo, identity_service)
     use_case = CreateBookingUseCase(
         service_repo,
+        business_repo,
         object_repo,
         booking_repo,
         custom_field_repo,
