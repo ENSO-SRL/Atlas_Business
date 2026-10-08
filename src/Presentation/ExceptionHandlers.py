@@ -15,6 +15,16 @@ from src.Application.Exceptions.business_exceptions import (
     InvalidRncError,
     VerticalMetadataValidationError,
     InvalidBookingStateTransitionError,
+    InvalidScheduleError,
+    BookableObjectNotFoundError,
+    CustomFieldNotFoundError,
+    CustomerAlreadyExistsError,
+    CustomerNotFoundError,
+    RatesRequiredForBillableServiceError,
+    EmailAlreadyVerifiedError,
+    EmailNotVerifiedError,
+    InvalidEmailTokenError,
+    CategoryNameAlreadyExistsError,
 )
 
 from src.Application.Exceptions.client_exceptions import (
@@ -105,6 +115,46 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(VerticalMetadataValidationError)
     async def vertical_metadata_validation_handler(request: Request, exc: VerticalMetadataValidationError):
         return JSONResponse(status_code=400, content={"error": "VERTICAL_METADATA_INVALID", "detail": str(exc)})
+
+    @app.exception_handler(InvalidScheduleError)
+    async def invalid_schedule_handler(request: Request, exc: InvalidScheduleError):
+        return JSONResponse(status_code=400, content={"error": "INVALID_SCHEDULE", "detail": str(exc)})
+
+    @app.exception_handler(BookableObjectNotFoundError)
+    async def bookable_object_not_found_handler(request: Request, exc: BookableObjectNotFoundError):
+        return JSONResponse(status_code=404, content={"error": "BOOKABLE_OBJECT_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(CustomFieldNotFoundError)
+    async def custom_field_not_found_handler(request: Request, exc: CustomFieldNotFoundError):
+        return JSONResponse(status_code=404, content={"error": "CUSTOM_FIELD_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(CustomerAlreadyExistsError)
+    async def customer_already_exists_handler(request: Request, exc: CustomerAlreadyExistsError):
+        return JSONResponse(status_code=409, content={"error": "CUSTOMER_ALREADY_EXISTS", "detail": str(exc)})
+
+    @app.exception_handler(CustomerNotFoundError)
+    async def customer_not_found_handler(request: Request, exc: CustomerNotFoundError):
+        return JSONResponse(status_code=404, content={"error": "CUSTOMER_NOT_FOUND", "detail": str(exc)})
+
+    @app.exception_handler(RatesRequiredForBillableServiceError)
+    async def rates_required_handler(request: Request, exc: RatesRequiredForBillableServiceError):
+        return JSONResponse(status_code=422, content={"error": "RATES_REQUIRED_FOR_BILLABLE_SERVICE", "detail": str(exc)})
+
+    @app.exception_handler(EmailAlreadyVerifiedError)
+    async def email_already_verified_handler(request: Request, exc: EmailAlreadyVerifiedError):
+        return JSONResponse(status_code=409, content={"error": "EMAIL_ALREADY_VERIFIED", "detail": str(exc)})
+
+    @app.exception_handler(EmailNotVerifiedError)
+    async def email_not_verified_handler(request: Request, exc: EmailNotVerifiedError):
+        return JSONResponse(status_code=403, content={"error": "EMAIL_NOT_VERIFIED", "detail": str(exc)})
+
+    @app.exception_handler(InvalidEmailTokenError)
+    async def invalid_email_token_handler(request: Request, exc: InvalidEmailTokenError):
+        return JSONResponse(status_code=400, content={"error": "INVALID_EMAIL_TOKEN", "detail": str(exc)})
+
+    @app.exception_handler(CategoryNameAlreadyExistsError)
+    async def category_name_already_exists_handler(request: Request, exc: CategoryNameAlreadyExistsError):
+        return JSONResponse(status_code=409, content={"error": "CATEGORY_NAME_ALREADY_EXISTS", "detail": str(exc)})
 
     # Infra Exceptions
     

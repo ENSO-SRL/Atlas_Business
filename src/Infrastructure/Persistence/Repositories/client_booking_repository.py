@@ -6,6 +6,7 @@ from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Domain.Entities.booking import Booking
+from src.Domain.Enums.booking_status import BookingStatus
 from src.Domain.Ports.Repositories.i_client_booking_repository import IClientBookingRepository, OccupiedGroup
 from src.Infrastructure.Persistence.Models.booking_model import BookingModel
 from src.Infrastructure.Persistence.Repositories.base_repository import BaseRepository
@@ -44,6 +45,11 @@ class ClientBookingRepository(BaseRepository, IClientBookingRepository):
                 BookingModel.bookable_object_id.in_(object_ids),
                 BookingModel.start_time < day_end,
                 BookingModel.end_time > day_start,
+                BookingModel.status.in_([
+                    BookingStatus.REQUESTED.value,
+                    BookingStatus.APPROVED.value,
+                    BookingStatus.CONFIRMED.value
+                ])
             )
             .group_by(BookingModel.start_time, BookingModel.end_time)
         )
@@ -76,6 +82,11 @@ class ClientBookingRepository(BaseRepository, IClientBookingRepository):
                 BookingModel.bookable_object_id.in_(object_ids),
                 BookingModel.start_time < slot_end,
                 BookingModel.end_time > slot_start,
+                BookingModel.status.in_([
+                    BookingStatus.REQUESTED.value,
+                    BookingStatus.APPROVED.value,
+                    BookingStatus.CONFIRMED.value
+                ])
             )
         )
 
@@ -127,7 +138,11 @@ class ClientBookingRepository(BaseRepository, IClientBookingRepository):
                 BookingModel.customer_id == customer_id,
                 BookingModel.start_time >= day_start,
                 BookingModel.start_time <= day_end,
-                # BookingModel.status == 'CONFIRMED' # Cuando se agregue status a BD
+                BookingModel.status.in_([
+                    BookingStatus.REQUESTED.value,
+                    BookingStatus.APPROVED.value,
+                    BookingStatus.CONFIRMED.value
+                ])
             )
         )
         

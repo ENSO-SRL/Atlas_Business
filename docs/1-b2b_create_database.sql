@@ -52,6 +52,14 @@ CREATE TYPE content_request_status_enum AS ENUM (
     'SUPERSEDED'
 );
 
+CREATE TYPE booking_status_enum AS ENUM (
+    'REQUESTED',
+    'APPROVED',
+    'REJECTED',
+    'CONFIRMED',
+    'CANCELLED'
+);
+
 -- ============================================================
 -- TABLAS
 -- ============================================================
@@ -144,6 +152,7 @@ CREATE TABLE service (
     billing_nature                  billing_nature_enum         NOT NULL,
     agent_metadata_id               UUID                        NOT NULL REFERENCES agent_metadata(id) ON DELETE RESTRICT,
     publication_status              publication_status_enum     NOT NULL DEFAULT 'DRAFT',
+    requires_manual_approval        BOOLEAN                     NOT NULL DEFAULT false,
     -- Motivo de rechazo en la moderación de creación. NULL si no fue rechazado.
     rejection_reason                TEXT,
     created_at                      TIMESTAMPTZ,
@@ -223,6 +232,7 @@ CREATE TABLE booking (
     calculated_amount   NUMERIC(12, 2),
     -- Respuestas a los CustomField del servicio. Llaves = UUID del campo.
     custom_fields       JSONB           NOT NULL DEFAULT '{}'::jsonb,
+    status              booking_status_enum NOT NULL DEFAULT 'REQUESTED',
     created_at          TIMESTAMPTZ,
     created_by          UUID,
     updated_at          TIMESTAMPTZ,
@@ -238,7 +248,7 @@ CREATE TABLE booking (
     EXCLUDE USING gist (
         bookable_object_id  WITH =,
         tstzrange(start_time, end_time, '[)') WITH &&
-    )
+    ) WHERE (status IN ('REQUESTED', 'APPROVED', 'CONFIRMED'))
 );
 
 -- Índice crítico para el query de disponibilidad (agrupa reservas por objeto y fecha).

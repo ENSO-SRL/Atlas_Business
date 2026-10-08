@@ -29,7 +29,7 @@ class BookingModel(Base):
         EXCLUDE USING gist (
             bookable_object_id WITH =,
             tstzrange(start_time, end_time, '[)') WITH &&
-        );
+        ) WHERE (status IN ('REQUESTED', 'APPROVED', 'CONFIRMED'));
 
     Requiere la extensión btree_gist: CREATE EXTENSION IF NOT EXISTS btree_gist;
     """
