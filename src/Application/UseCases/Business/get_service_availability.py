@@ -109,17 +109,25 @@ class GetServiceAvailabilityUseCase:
             
         qualified_ids = [obj.id for obj in qualified_objects]
 
-        # 2. Determinar horario laboral del negocio para ese día
+        # 2. Determinar horario laboral para ese día
         business = await self.business_repo.get_by_id(service.business_id)
         weekday = command.date.strftime("%A").upper()
         
-        schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
-        
-        if not schedule:
-            return empty_result
+        if service.schedules:
+            schedule = next((s for s in service.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                return empty_result
+            op_time = schedule.opening_time
+            cl_time = schedule.closing_time
+        else:
+            schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
+            if not schedule:
+                return empty_result
+            op_time = time.fromisoformat(schedule.opening_time) if isinstance(schedule.opening_time, str) else schedule.opening_time
+            cl_time = time.fromisoformat(schedule.closing_time) if isinstance(schedule.closing_time, str) else schedule.closing_time
 
-        day_start = datetime.combine(command.date, time.fromisoformat(schedule.opening_time)).replace(tzinfo=timezone.utc)
-        day_end = datetime.combine(command.date, time.fromisoformat(schedule.closing_time)).replace(tzinfo=timezone.utc)
+        day_start = datetime.combine(command.date, op_time).replace(tzinfo=timezone.utc)
+        day_end = datetime.combine(command.date, cl_time).replace(tzinfo=timezone.utc)
 
         # 3. Generar parrilla de slots candidatos
         total_duration = service.occupation_duration_minutes + service.buffer_minutes
@@ -131,8 +139,9 @@ class GetServiceAvailabilityUseCase:
             t += timedelta(minutes=service.grid_interval_minutes)
 
         if not candidate_slots:
+            print("No hay candidate slots")
             return empty_result
-            
+        print("candidate_slots", candidate_slots)
         # 4. Recuperar grupos de ocupación desde la BD
         occupied_groups = await self.client_booking_repo.get_occupied_groups(
             object_ids=qualified_ids,

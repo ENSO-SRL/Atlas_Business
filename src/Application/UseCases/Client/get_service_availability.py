@@ -112,8 +112,6 @@ class GetServiceAvailabilityUseCase:
             if not schedule:
                 # El servicio no opera este día
                 return empty_result
-            # Convertir time de ServiceSchedule a string para compatibilidad si fuera necesario, 
-            # pero schedule.opening_time ya es datetime.time
             op_time = schedule.opening_time
             cl_time = schedule.closing_time
         else:
@@ -121,8 +119,8 @@ class GetServiceAvailabilityUseCase:
             schedule = next((s for s in business.schedules if s.weekday.value == weekday), None)
             if not schedule:
                 return empty_result
-            op_time = time.fromisoformat(schedule.opening_time)
-            cl_time = time.fromisoformat(schedule.closing_time)
+            op_time = time.fromisoformat(schedule.opening_time) if isinstance(schedule.opening_time, str) else schedule.opening_time
+            cl_time = time.fromisoformat(schedule.closing_time) if isinstance(schedule.closing_time, str) else schedule.closing_time
 
         # Asumimos UTC para las consultas a BD por simplicidad si no hay timezone especificado
         day_start = datetime.combine(command.date, op_time).replace(tzinfo=timezone.utc)

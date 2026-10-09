@@ -13,6 +13,10 @@ from src.Application.UseCases.Business.create_business_customer import (
     CreateBusinessCustomerCommand,
     CreateBusinessCustomerUseCase,
 )
+from src.Application.UseCases.Business.get_business_customer_by_id import (
+    GetBusinessCustomerByIdCommand,
+    GetBusinessCustomerByIdUseCase,
+)
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
 from src.Domain.Ports.Repositories.i_business_customer_repository import IBusinessCustomerRepository
 from src.Presentation.Dependencies.auth import UserContext, require_admin
@@ -21,6 +25,7 @@ from src.Presentation.Schemas.business_schemas import (
     PaginatedBusinessCustomerResponse,
     PaginatedCustomerBookingResponse,
     CreateCustomerRequest,
+    BusinessCustomerResponse,
 )
 
 router = APIRouter(prefix="/customers", tags=["Business Customers"])
@@ -60,6 +65,20 @@ async def create_customer(
     )
     result = await use_case.execute(command)
     return result
+
+
+@router.get("/{customer_id}", response_model=BusinessCustomerResponse)
+async def get_customer(
+    customer_id: UUID,
+    user: UserContext = Depends(require_admin),
+    customer_repo: IBusinessCustomerRepository = Depends(get_business_customer_repo),
+):
+    use_case = GetBusinessCustomerByIdUseCase(customer_repo)
+    command = GetBusinessCustomerByIdCommand(
+        business_id=user.business_id,
+        customer_id=customer_id,
+    )
+    return await use_case.execute(command)
 
 
 @router.get("/{customer_id}/bookings", response_model=PaginatedCustomerBookingResponse)
