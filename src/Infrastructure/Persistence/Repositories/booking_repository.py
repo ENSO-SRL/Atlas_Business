@@ -74,6 +74,18 @@ class BookingRepository(BaseRepository, IBookingRepository):
             stmt = stmt.where(BookingModel.start_time < date_to + timedelta(days=1))
         return stmt
 
+    async def list_for_calendar(
+        self,
+        business_id: UUID,
+        date_from: date,
+        date_to: date,
+        service_id: UUID | None = None,
+    ) -> list[Booking]:
+        base = self._base_stmt(business_id, service_id, date_from, date_to)
+        stmt = base.order_by(BookingModel.start_time.asc())
+        result = await self.session.execute(stmt)
+        return [self._to_entity(m) for m in result.unique().scalars().all()]
+
     async def list_by_business(
         self,
         business_id: UUID,

@@ -46,6 +46,7 @@ class GetBookingUseCase:
             party_size=b.party_size,
             calculated_amount=str(b.calculated_amount) if b.calculated_amount is not None else None,
             custom_fields=b.custom_fields,
+            status=b.status.value,
             customer=customer_summary,
             created_at=b.created_at.isoformat() if b.created_at else None,
         )

@@ -7,6 +7,16 @@ from src.Domain.Entities.booking import Booking
 
 class IBookingRepository(ABC):
     @abstractmethod
+    async def list_for_calendar(
+        self,
+        business_id: UUID,
+        date_from: date,
+        date_to: date,
+        service_id: UUID | None = None,
+    ) -> list[Booking]:
+        ...
+
+    @abstractmethod
     async def list_by_business(
         self,
         business_id: UUID,

@@ -207,6 +207,7 @@ class BusinessBookingResponse(BaseModel):
     party_size: int
     calculated_amount: str | None
     custom_fields: dict
+    status: str
     customer: CustomerSummaryResponse | None
     created_at: str | None
 
@@ -238,6 +239,7 @@ class CustomerBookingResponse(BaseModel):
     end_time: str
     party_size: int
     calculated_amount: str | None
+    status: str
     created_at: str | None
 
 class PaginatedCustomerBookingResponse(BaseModel):

@@ -2,74 +2,37 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
+from src.Application.UseCases.Business.list_business_bookings import BookingSummaryResult, CustomerSummary
 from src.Domain.Ports.Repositories.i_booking_repository import IBookingRepository
 
 
 @dataclass
-class ListBusinessBookingsCommand:
+class ListCalendarBookingsCommand:
     business_id: UUID
+    date_from: date
+    date_to: date
     service_id: UUID | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-    page: int = 1
-    page_size: int = 20
 
 
-@dataclass
-class CustomerSummary:
-    id: UUID
-    full_name: str
-    phone: str
-
-
-@dataclass
-class BookingSummaryResult:
-    id: UUID
-    service_id: UUID
-    service_name: str
-    bookable_object_id: UUID
-    bookable_object_name: str | None
-    start_time: str
-    end_time: str
-    party_size: int
-    calculated_amount: str | None
-    custom_fields: dict
-    status: str
-    customer: CustomerSummary | None
-    created_at: str | None
-
-
-@dataclass
-class PaginatedBookingResult:
-    items: list[BookingSummaryResult]
-    total: int
-    page: int
-    page_size: int
-
-
-class ListBusinessBookingsUseCase:
+class ListCalendarBookingsUseCase:
     """
-    Lista las reservas de un negocio, con soporte para paginación y filtros opcionales por servicio y fecha.
+    Lista las reservas de un negocio sin paginar, exclusivamente para alimentar la vista de un calendario.
+    Exige rango de fechas para evitar sobrecarga de la BD.
     """
 
     def __init__(self, booking_repo: IBookingRepository):
         self.booking_repo = booking_repo
 
-    async def execute(self, command: ListBusinessBookingsCommand) -> PaginatedBookingResult:
-        bookings, total = await self.booking_repo.list_by_business(
+    async def execute(self, command: ListCalendarBookingsCommand) -> list[BookingSummaryResult]:
+        bookings = await self.booking_repo.list_for_calendar(
             business_id=command.business_id,
-            service_id=command.service_id,
             date_from=command.date_from,
             date_to=command.date_to,
-            page=command.page,
-            page_size=command.page_size,
+            service_id=command.service_id,
         )
 
         items = []
         for b in bookings:
-            # Dado que el repositorio de lectura puede hacer JOIN (eager load), 
-            # asumimos que service y bookable_object están cargados si es necesario para el DTO.
-            # (El puerto debe ser implementado para cargar name del servicio y del objeto)
             service_name = b.service.name if b.service else "Desconocido"
             object_name = b.bookable_object.name if b.bookable_object else None
 
@@ -99,9 +62,4 @@ class ListBusinessBookingsUseCase:
                 )
             )
 
-        return PaginatedBookingResult(
-            items=items,
-            total=total,
-            page=command.page,
-            page_size=command.page_size,
-        )
+        return items

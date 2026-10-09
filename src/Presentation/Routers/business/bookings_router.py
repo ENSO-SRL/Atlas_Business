@@ -4,6 +4,7 @@ from uuid import UUID
 
 from src.Application.UseCases.Business.get_booking import GetBookingCommand, GetBookingUseCase
 from src.Application.UseCases.Business.list_business_bookings import ListBusinessBookingsCommand, ListBusinessBookingsUseCase
+from src.Application.UseCases.Business.list_calendar_bookings import ListCalendarBookingsCommand, ListCalendarBookingsUseCase
 from src.Application.UseCases.Business.create_internal_booking import CreateInternalBookingCommand, CreateInternalBookingUseCase
 from src.Application.UseCases.Business.update_booking_status import UpdateBookingStatusCommand, UpdateBookingStatusUseCase
 from src.Domain.Enums.booking_status import BookingStatus
@@ -24,7 +25,7 @@ from src.Presentation.Dependencies.repositories import (
     get_service_rate_repo,
     get_business_customer_repo,
 )
-from src.Presentation.Schemas.business_schemas import CreateInternalBookingRequest, PaginatedBusinessBookingResponse
+from src.Presentation.Schemas.business_schemas import CreateInternalBookingRequest, PaginatedBusinessBookingResponse, BusinessBookingResponse
 
 router = APIRouter()
 
@@ -89,6 +90,25 @@ async def create_internal_booking(
         party_size=body.party_size,
         bookable_object_id=body.bookable_object_id,
         custom_fields=body.custom_fields,
+    )
+    result = await use_case.execute(command)
+    return result
+
+
+@router.get("/calendar", response_model=list[BusinessBookingResponse])
+async def list_calendar_bookings(
+    date_from: date,
+    date_to: date,
+    service_id: UUID | None = None,
+    user: UserContext = Depends(get_current_user),
+    booking_repo: IBookingRepository = Depends(get_booking_repo),
+):
+    use_case = ListCalendarBookingsUseCase(booking_repo)
+    command = ListCalendarBookingsCommand(
+        business_id=user.business_id,
+        date_from=date_from,
+        date_to=date_to,
+        service_id=service_id,
     )
     result = await use_case.execute(command)
     return result
