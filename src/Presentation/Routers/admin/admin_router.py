@@ -15,7 +15,7 @@ from src.Application.UseCases.Admin.service_category_use_cases import (
 )
 from src.Domain.Ports.Repositories.i_business_category_repository import IBusinessCategoryRepository
 from src.Domain.Ports.Repositories.i_service_category_repository import IServiceCategoryRepository
-from src.Presentation.Dependencies.auth import UserContext, require_superadmin
+from src.Presentation.Dependencies.auth import UserContext, require_superadmin, get_current_user
 from src.Presentation.Dependencies.repositories import get_business_category_repo, get_service_category_repo
 from pydantic import BaseModel
 
@@ -54,7 +54,7 @@ async def create_business_category(
 @router.get("/business-categories")
 async def list_business_categories(
     only_active: bool = True,
-    _: UserContext = Depends(require_superadmin),
+    _: UserContext = Depends(get_current_user),
     repo: IBusinessCategoryRepository = Depends(get_business_category_repo),
 ):
     use_case = ListBusinessCategoriesUseCase(repo)
@@ -106,7 +106,7 @@ async def create_service_category(
 @router.get("/service-categories")
 async def list_service_categories(
     only_active: bool = True,
-    _: UserContext = Depends(require_superadmin),
+    _: UserContext = Depends(get_current_user),
     repo: IServiceCategoryRepository = Depends(get_service_category_repo),
 ):
     use_case = ListServiceCategoriesUseCase(repo)

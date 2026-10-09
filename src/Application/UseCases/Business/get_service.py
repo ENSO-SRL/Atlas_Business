@@ -25,6 +25,8 @@ class PendingEditRequest:
 class ServiceDetailResult:
     id: UUID
     name: str
+    category_id: UUID
+    category_name: str
     publication_status: str
     occupation_duration_minutes: int
     duration_nature: str
@@ -62,6 +64,8 @@ class GetServiceUseCase:
         self.content_request_repo = content_request_repo
 
     async def execute(self, command: GetServiceCommand) -> ServiceDetailResult:
+        print("LLEGUE AL USE CASE")
+        print(command)
         service = await self.service_repo.get_by_id(command.service_id, command.business_id)
         if not service:
             raise ServiceNotFoundError()
@@ -117,6 +121,8 @@ class GetServiceUseCase:
         return ServiceDetailResult(
             id=service.id,
             name=service.name,
+            category_id=service.category_id,
+            category_name=service.category_name or "Desconocida",
             publication_status=service.publication_status.value,
             occupation_duration_minutes=service.occupation_duration_minutes,
             duration_nature=service.duration_nature.value,

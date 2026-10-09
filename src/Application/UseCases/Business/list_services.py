@@ -16,6 +16,8 @@ class ListServicesCommand:
 class ServiceSummaryResult:
     id: UUID
     name: str
+    category_id: UUID
+    category_name: str
     publication_status: str
     occupation_duration_minutes: int
     duration_nature: str
@@ -47,6 +49,8 @@ class ListServicesUseCase:
             ServiceSummaryResult(
                 id=s.id,
                 name=s.name,
+                category_id=s.category_id,
+                category_name=s.category_name or "Desconocida",
                 publication_status=s.publication_status.value,
                 occupation_duration_minutes=s.occupation_duration_minutes,
                 duration_nature=s.duration_nature.value,

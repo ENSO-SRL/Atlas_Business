@@ -55,6 +55,7 @@ class Service:
     billing_nature: BillingNature
     agent_metadata_id: UUID
     category_id: UUID
+    category_name: str | None = None
     publication_status: PublicationStatus = PublicationStatus.DRAFT
     rejection_reason: str | None = None
     created_by: UUID | None = None

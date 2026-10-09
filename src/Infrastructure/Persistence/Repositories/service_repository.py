@@ -17,6 +17,7 @@ from src.Domain.Enums.publication_status import PublicationStatus
 from src.Domain.Enums.weekday import Weekday
 from src.Domain.Ports.Repositories.i_service_repository import IServiceRepository
 from src.Infrastructure.Persistence.Models.service_model import ServiceModel
+from src.Infrastructure.Persistence.Models.service_category_model import ServiceCategoryModel
 from src.Infrastructure.Persistence.Repositories.base_repository import BaseRepository
 
 
@@ -26,7 +27,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
         super().__init__(session)
 
     @staticmethod
-    def _to_entity(model: ServiceModel) -> Service:
+    def _to_entity(model: ServiceModel, category_name: str | None = None) -> Service:
         svc = Service(
             id=model.id,
             business_id=model.business_id,
@@ -45,6 +46,7 @@ class ServiceRepository(BaseRepository, IServiceRepository):
             billing_nature=BillingNature(model.billing_nature),
             agent_metadata_id=model.agent_metadata_id,
             category_id=model.category_id,
+            category_name=category_name,
             publication_status=PublicationStatus(model.publication_status),
             rejection_reason=model.rejection_reason,
             created_at=model.created_at,
@@ -98,21 +100,29 @@ class ServiceRepository(BaseRepository, IServiceRepository):
     async def list_by_business(
         self, business_id: UUID, status: PublicationStatus | None = None
     ) -> list[Service]:
-        stmt = select(ServiceModel).where(ServiceModel.business_id == business_id)
+        stmt = (
+            select(ServiceModel, ServiceCategoryModel.name)
+            .outerjoin(ServiceCategoryModel, ServiceModel.category_id == ServiceCategoryModel.id)
+            .where(ServiceModel.business_id == business_id)
+        )
         if status is not None:
             stmt = stmt.where(ServiceModel.publication_status == status.value)
         stmt = stmt.order_by(ServiceModel.name)
         result = await self.session.execute(stmt)
-        return [self._to_entity(m) for m in result.scalars().all()]
+        return [self._to_entity(row[0], row[1]) for row in result.all()]
 
     async def get_by_id(self, id: UUID, business_id: UUID) -> Service | None:
-        stmt = select(ServiceModel).where(
-            ServiceModel.id == id,
-            ServiceModel.business_id == business_id,
+        stmt = (
+            select(ServiceModel, ServiceCategoryModel.name)
+            .outerjoin(ServiceCategoryModel, ServiceModel.category_id == ServiceCategoryModel.id)
+            .where(
+                ServiceModel.id == id,
+                ServiceModel.business_id == business_id,
+            )
         )
         result = await self.session.execute(stmt)
-        model = result.scalar_one_or_none()
-        return self._to_entity(model) if model else None
+        row = result.first()
+        return self._to_entity(row[0], row[1]) if row else None
 
     async def create(self, entity: Service) -> Service:
         model = ServiceModel(

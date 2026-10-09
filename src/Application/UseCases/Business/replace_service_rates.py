@@ -63,21 +63,29 @@ class ReplaceServiceRatesUseCase:
 
         # Validar cobertura
         self._validate_coverage(command.rates, business_schedule)
-
+        print("Rates validated")
+        print(command.rates)
         new_rates = []
         for ri in command.rates:
+            print(ri)
             try:
                 rate_id = uuid.uuid7()
             except AttributeError:
                 rate_id = uuid.uuid4()
-
+        
+            try:
+                start_time = datetime.strptime(ri.start_time, "%H:%M").time()
+                end_time = datetime.strptime(ri.end_time, "%H:%M").time()
+            except TypeError:
+                start_time = ri.start_time
+                end_time = ri.end_time
             new_rates.append(
                 ServiceRate(
                     id=rate_id,
                     service_id=command.service_id,
                     weekdays=ri.weekdays,
-                    start_time=datetime.strptime(ri.start_time, "%H:%M").time(),
-                    end_time=datetime.strptime(ri.end_time, "%H:%M").time(),
+                    start_time=start_time,
+                    end_time=end_time,
                     amount=Decimal(ri.amount),
                     calculation_basis=CalculationBasis(ri.calculation_basis),
                     created_by=command.actor_id,
@@ -130,6 +138,7 @@ class ReplaceServiceRatesUseCase:
 
             # 1. Empieza al abrir el negocio?
             if day_rates[0][0] > opening:
+                print("Hay un hueco al inicio de las tarifas")
                 raise RatesCoverageIncompleteError(
                     weekday=weekday,
                     gap_start=opening.strftime("%H:%M"),
@@ -142,6 +151,7 @@ class ReplaceServiceRatesUseCase:
                 next_start = day_rates[i][0]
                 
                 if next_start > current_end:
+                    print("Hay un hueco en las tarifas")
                     raise RatesCoverageIncompleteError(
                         weekday=weekday,
                         gap_start=current_end.strftime("%H:%M"),
@@ -153,6 +163,7 @@ class ReplaceServiceRatesUseCase:
 
             # 3. Termina al cerrar el negocio?
             if current_end < closing:
+                print("Hay un hueco al final de las tarifas")
                 raise RatesCoverageIncompleteError(
                     weekday=weekday,
                     gap_start=current_end.strftime("%H:%M"),

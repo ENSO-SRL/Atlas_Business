@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+import decimal
 
 from src.Application.Exceptions.business_exceptions import (
     BusinessNotFoundError,
@@ -155,6 +156,14 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(CategoryNameAlreadyExistsError)
     async def category_name_already_exists_handler(request: Request, exc: CategoryNameAlreadyExistsError):
         return JSONResponse(status_code=409, content={"error": "CATEGORY_NAME_ALREADY_EXISTS", "detail": str(exc)})
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError):
+        return JSONResponse(status_code=400, content={"error": "INVALID_VALUE", "detail": str(exc)})
+
+    @app.exception_handler(decimal.InvalidOperation)
+    async def decimal_invalid_operation_handler(request: Request, exc: decimal.InvalidOperation):
+        return JSONResponse(status_code=400, content={"error": "INVALID_DECIMAL_FORMAT", "detail": "Formato de número inválido."})
 
     # Infra Exceptions
     

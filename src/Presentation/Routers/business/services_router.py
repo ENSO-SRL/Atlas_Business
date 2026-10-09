@@ -328,13 +328,13 @@ async def replace_service_rates(
     use_case = ReplaceServiceRatesUseCase(rate_repo, service_repo, business_repo)
     
     rates_data = [
-        {
-            "weekdays": r.weekdays,
-            "start_time": r.start_time,
-            "end_time": r.end_time,
-            "amount": r.amount,
-            "calculation_basis": r.calculation_basis,
-        }
+        RateInput(
+            weekdays=r.weekdays,
+            start_time=r.start_time,
+            end_time=r.end_time,
+            amount=r.amount,
+            calculation_basis=r.calculation_basis,
+        )
         for r in body.rates
     ]
     
